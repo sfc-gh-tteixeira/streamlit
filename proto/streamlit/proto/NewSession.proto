@@ -117,6 +117,9 @@ message CustomThemeConfig {
 
   string primary_color = 1;
   string secondary_background_color = 2;
+  string widget_background_color = 7;
+  // TODO: Pipe font sizes
+  // TODO: Pipe font family
   string background_color = 3;
   string text_color = 4;
   FontFamily font = 5;

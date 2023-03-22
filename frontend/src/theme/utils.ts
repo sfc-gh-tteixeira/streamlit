@@ -125,6 +125,8 @@ export const createBaseThemePrimitives = (
 // NOTE: A lot of the properties we can override here don't seem to actually
 // be used anywhere in BaseWeb's source. Will report a bug about it.
 export const createThemeOverrides = (theme: Theme): Record<string, any> => {
+  // TODO: theme now has a theme.widgetBg! Just plug it into the right places.
+
   const { inSidebar, colors, genericFonts, fontSizes, lineHeights, radii } =
     theme
   const fontStyles = {
@@ -392,6 +394,7 @@ export const createEmotionTheme = (
   const {
     secondaryBackgroundColor: secondaryBg,
     backgroundColor: bgColor,
+    widgetBackgroundColor: widgetBg,
     primaryColor: primary,
     textColor: bodyText,
   } = parsedColors
@@ -402,10 +405,31 @@ export const createEmotionTheme = (
     ...(bodyText && { bodyText }),
     ...(secondaryBg && { secondaryBg }),
     ...(bgColor && { bgColor }),
+    ...(widgetBg && { widgetBg }),
   }
 
   return {
     ...baseThemeConfig.emotion,
+
+    fonts: {
+      // TODO: Somehow the font families from themeInput to appear here and override the ones
+      // for baseThemeConfig.fonts.
+      //
+      // Semantically, we want something like:
+      // sansSerif: "new value" if themeInput.sansSerif is set,
+      // monospace: "new value" if themeInput.monospace is set,
+      // etc.
+      }
+    }
+    fontSizes: {
+      // TODO: Somehow get the font sizes from themeInput to appear here and override the ones
+      // for baseThemeConfig.fontSizes.
+      //
+      // Semantically, we want something like:
+      // sm: "new value" if themeInput.sm is set,
+      // md: "new value" if themeInput.md is set,
+      // etc.
+    }
     colors: createEmotionColors(newGenericColors),
     genericColors: newGenericColors,
     genericFonts: {
