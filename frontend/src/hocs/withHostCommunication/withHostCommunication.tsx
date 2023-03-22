@@ -187,6 +187,11 @@ function withHostCommunication(
         if (message.type === "UPDATE_HASH") {
           window.location.hash = message.hash
         }
+
+        if (message.type === "SET_CUSTOM_THEME_CONFIG") {
+          // TODO: Make sure TS lets us use props.theme
+          props.theme.setImportedTheme(message.customThemeConfig)
+        }
       }
 
       if (!allowedOrigins.length) {

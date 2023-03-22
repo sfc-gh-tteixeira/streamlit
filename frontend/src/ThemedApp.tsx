@@ -18,6 +18,8 @@ import React from "react"
 import { BaseProvider } from "baseui"
 import { Global } from "@emotion/react"
 
+import { CustomThemeConfig } from "src/autogen/proto"
+
 import ThemeProvider from "src/components/core/ThemeProvider"
 import {
   AUTO_THEME_NAME,
@@ -69,6 +71,21 @@ const ThemedApp = (): JSX.Element => {
       theme => theme.name !== AUTO_THEME_NAME
     )
     setAvailableThemes([createAutoTheme(), ...constantThemes])
+  }
+
+  const setImportedTheme = (customThemeConfig: CustomThemeConfig): void => {
+    const SNOWSIGHT_THEME_NAME = "Snowsight light" // TODO: Figure out if the name matters...
+
+    // TODO: Depending on the Host->Guest API for setting custom themes, 
+    // we may need to create the customThemeConfig proto here.
+    //
+    // For example:
+    // const customThemeConfig = new CustomThemeConfig()
+    // customThemeConfig.backgroundColor = stuffWeGotFromHost.myBgColorProperty
+    // ...
+
+    const customTheme = createTheme(SNOWSIGHT_THEME_NAME, customThemeConfig)
+    updateTheme(customTheme)
   }
 
   React.useEffect(() => {
