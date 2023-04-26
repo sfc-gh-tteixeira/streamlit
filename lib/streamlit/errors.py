@@ -125,3 +125,15 @@ or in your `.streamlit/config.toml`
 
     def __repr__(self) -> str:
         return util.repr_(self)
+
+
+class StreamlitModuleNotFoundError(StreamlitAPIWarning):
+    """Print a pretty message when a Streamlit command requires a dependency
+    that is not one of our core dependencies."""
+
+    def __init__(self, module_name, *args):
+        message = (
+            f'This Streamlit command requires module "{module_name}" to be '
+            "installed."
+        )
+        super().__init__(message, *args)

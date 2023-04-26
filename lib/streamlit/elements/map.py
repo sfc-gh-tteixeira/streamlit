@@ -23,6 +23,7 @@ from typing_extensions import Final, TypeAlias
 
 import streamlit.elements.deck_gl_json_chart as deck_gl_json_chart
 from streamlit import type_util
+from streamlit.color_util import get_int_color_tuple_or_column_name
 from streamlit.errors import StreamlitAPIException
 from streamlit.proto.DeckGlJsonChart_pb2 import DeckGlJsonChart as DeckGlJsonChartProto
 from streamlit.runtime.metrics_util import gather_metrics
@@ -45,7 +46,6 @@ Data: TypeAlias = Union[
 _DEFAULT_MAP: Final[Dict[str, Any]] = dict(deck_gl_json_chart.EMPTY_MAP)
 
 # Other default parameters for st.map.
-_DEFAULT_COLOR: Final = [200, 30, 0, 160]
 _DEFAULT_ZOOM_LEVEL: Final = 12
 _ZOOM_LEVELS: Final = [
     360,
@@ -79,6 +79,13 @@ class MapMixin:
         data: Data = None,
         zoom: Optional[int] = None,
         use_container_width: bool = True,
+        *,
+        # TODO XXX Add latitude and longitude.
+        size: float | None = 10,
+        color: str
+        | tuple[float, float, float]
+        | tuple[float, float, float, float]
+        | None = (200, 30, 0, 160),
     ) -> "DeltaGenerator":
         """Display a map with points on it.
 
@@ -101,7 +108,9 @@ class MapMixin:
 
         Parameters
         ----------
-        data : pandas.DataFrame, pandas.Styler, pyarrow.Table, numpy.ndarray, pyspark.sql.DataFrame, snowflake.snowpark.dataframe.DataFrame, snowflake.snowpark.table.Table, Iterable, dict, or None
+        data : pandas.DataFrame, pandas.Styler, pyarrow.Table, numpy.ndarray,
+            pyspark.sql.DataFrame, snowflake.snowpark.dataframe.DataFrame,
+            snowflake.snowpark.table.Table, Iterable, dict, or None
             The data to be plotted. Must have two columns:
 
             - latitude called 'lat', 'latitude', 'LAT', 'LATITUDE'
@@ -110,7 +119,26 @@ class MapMixin:
         zoom : int
             Zoom level as specified in
             https://wiki.openstreetmap.org/wiki/Zoom_levels
+
         use_container_width: bool
+
+        size : float or None
+            The size of the circles representing each point. This is a
+            keyword-only argument.
+
+        color : str or tuple or None
+            The color of the circles representing each point. This is a
+            keyword-only argument.
+
+            Can be:
+            * A color tuple like (255, 255, 128) or (255, 255, 128, 64).
+              TODO: See if they should go from 0-255 or 0.0-1.0.
+            * A hex string like "#ff00ff"
+            * A Matplotlib-compatible color name like "blue". See full list
+              at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
+
+            If passing in a str, the Matplotlib library must be installed.
+
 
         Example
         -------
@@ -130,7 +158,7 @@ class MapMixin:
 
         """
         map_proto = DeckGlJsonChartProto()
-        map_proto.json = to_deckgl_json(data, zoom)
+        map_proto.json = to_deckgl_json(data, size, color, zoom)
         map_proto.use_container_width = use_container_width
         return self.dg._enqueue("deck_gl_json_chart", map_proto)
 
@@ -164,7 +192,12 @@ def _get_zoom_level(distance: float) -> int:
     return _DEFAULT_ZOOM_LEVEL
 
 
-def to_deckgl_json(data: Data, zoom: Optional[int]) -> str:
+def to_deckgl_json(
+    data: Data,
+    size: float,
+    color: Iterable[float],
+    zoom: Optional[int],
+) -> str:
     if data is None:
         return json.dumps(_DEFAULT_MAP)
 
@@ -220,14 +253,38 @@ def to_deckgl_json(data: Data, zoom: Optional[int]) -> str:
             longitude_distance = range_lat
         zoom = _get_zoom_level(longitude_distance)
 
+    if isinstance(size, str):
+        size_col_name = size
+        size = "@@=size"
+    else:
+        size_col_name = None
+
+    color, color_col_name = get_int_color_tuple_or_column_name(color)
+
+    if color_col_name:
+        color = "@@=color"
+
     # "+1" because itertuples includes the row index.
     lon_col_index = data.columns.get_loc(lon) + 1
     lat_col_index = data.columns.get_loc(lat) + 1
+    color_col_index = (
+        data.columns.get_loc(color_col_name) + 1 if color_col_name else None
+    )
+    size_col_index = data.columns.get_loc(size_col_name) + 1 if size_col_name else None
     final_data = []
     for row in data.itertuples():
-        final_data.append(
-            {"lon": float(row[lon_col_index]), "lat": float(row[lat_col_index])}
-        )
+        row_dict = {
+            "lon": float(row[lon_col_index]),
+            "lat": float(row[lat_col_index]),
+        }
+
+        if color_col_name:
+            row_dict["color"] = row[color_col_index]
+
+        if color_col_name:
+            row_dict["size"] = row[size_col_index]
+
+        final_data.append(row_dict)
 
     default = copy.deepcopy(_DEFAULT_MAP)
     default["initialViewState"]["latitude"] = center_lat
@@ -237,10 +294,10 @@ def to_deckgl_json(data: Data, zoom: Optional[int]) -> str:
         {
             "@@type": "ScatterplotLayer",
             "getPosition": "@@=[lon, lat]",
-            "getRadius": 10,
+            "getRadius": size,
             "radiusScale": 10,
             "radiusMinPixels": 3,
-            "getFillColor": _DEFAULT_COLOR,
+            "getFillColor": color,
             "data": final_data,
         }
     ]
