@@ -501,6 +501,11 @@ def convert_anything_to_df(
     pandas.DataFrame
 
     """
+    if data is None:
+        # Use an empty-ish dict because if we use None, in some charts the x axis
+        # labels rotate 90 degrees. No idea why. Need to debug.
+        return DataFrame({"": []})
+
     # This is inefficient as the data will be converted back to Arrow
     # when marshalled to protobuf, but area/bar/line charts need
     # DataFrame magic to generate the correct output.
