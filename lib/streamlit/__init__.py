@@ -152,6 +152,7 @@ plotly_chart = _main.plotly_chart
 progress = _main.progress
 pyplot = _main.pyplot
 radio = _main.radio
+scatterplot_chart = _main.scatterplot_chart
 selectbox = _main.selectbox
 select_slider = _main.select_slider
 slider = _main.slider
@@ -186,6 +187,7 @@ _arrow_altair_chart = _main._arrow_altair_chart
 _arrow_area_chart = _main._arrow_area_chart
 _arrow_bar_chart = _main._arrow_bar_chart
 _arrow_line_chart = _main._arrow_line_chart
+_arrow_scatterplot_chart = _main._arrow_scatterplot_chart
 _arrow_vega_lite_chart = _main._arrow_vega_lite_chart
 
 # Config
