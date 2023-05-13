@@ -472,11 +472,9 @@ def is_sequence(seq: Any) -> bool:
     """True if input looks like a sequence."""
     if isinstance(seq, str):
         return False
-    try:
-        len(seq)
-    except Exception:
-        return False
-    return True
+    if hasattr(seq, "__len__") and hasattr(seq, "__getitem__"):
+        return True
+    return False
 
 
 def convert_anything_to_df(
