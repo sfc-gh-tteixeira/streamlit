@@ -22,8 +22,8 @@ import pandas as pd
 from typing_extensions import Final, TypeAlias
 
 import streamlit.elements.deck_gl_json_chart as deck_gl_json_chart
-from streamlit import type_util
-from streamlit.color_util import get_int_color_tuple_or_column_name
+from streamlit import config, type_util
+from streamlit.color_util import Color, is_color, to_int_color_tuple
 from streamlit.errors import StreamlitAPIException
 from streamlit.proto.DeckGlJsonChart_pb2 import DeckGlJsonChart as DeckGlJsonChartProto
 from streamlit.runtime.metrics_util import gather_metrics
@@ -80,12 +80,11 @@ class MapMixin:
         zoom: Optional[int] = None,
         use_container_width: bool = True,
         *,
-        # TODO XXX Add latitude and longitude.
-        size: float | None = 10,
-        color: str
-        | tuple[float, float, float]
-        | tuple[float, float, float, float]
-        | None = (200, 30, 0, 160),
+        lat: Optional[str] = None,
+        lon: Optional[str] = None,
+        size: Union[str, float] = 10,
+        color: Union[str, Color] = (200, 30, 0, 160),
+        map_style: Optional[str] = None,
     ) -> "DeltaGenerator":
         """Display a map with points on it.
 
@@ -122,23 +121,39 @@ class MapMixin:
 
         use_container_width: bool
 
-        size : float or None
-            The size of the circles representing each point. This is a
-            keyword-only argument.
-
-        color : str or tuple or None
-            The color of the circles representing each point. This is a
-            keyword-only argument.
+        size : str or float
+            The size of the circles representing each point.
+            This argument can only be supplied by keyword.
 
             Can be:
-            * A color tuple like (255, 255, 128) or (255, 255, 128, 64).
-              TODO: See if they should go from 0-255 or 0.0-1.0.
-            * A hex string like "#ff00ff"
-            * A Matplotlib-compatible color name like "blue". See full list
+            - The name of a column containing size values.
+            - A number to use for the size of all datapoints.
+
+        color : str or tuple
+            The color of the circles representing each point.
+            This argument can only be supplied by keyword.
+
+            Can be:
+            - The name of a column containing the colors that should be used
+              for the corresponding datapoint. Colors **must** be in color tuple
+              format (described below), like (255, 170, 0) or (255, 170, 0, 0.5).
+            - A hex string like "#ffaa00" or "#ffaa0088".
+            - A Matplotlib-compatible color name like "blue". See full list
               at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
+            - A color tuple like (255, 170, 0) or (255, 160, 0, 255), where
+              the RGB components are ints in the interval [0, 255] and the alpha
+              component is a float in the interval [0.0, 1.0]. If they aren't
+              the right data types or in the right interval, this function tries
+              to guess the right thing to do.
 
             If passing in a str, the Matplotlib library must be installed.
 
+        map_style : str or None
+            One of Mapbox's map style URLs. A full list can be found here:
+            https://docs.mapbox.com/api/maps/styles/#mapbox-styles
+
+            This feature requires a Mapbox token. See above for information on
+            how to get one and set it up in Streamlit.
 
         Example
         -------
@@ -149,16 +164,36 @@ class MapMixin:
         >>> df = pd.DataFrame(
         ...     np.random.randn(1000, 2) / [50, 50] + [37.76, -122.4],
         ...     columns=['lat', 'lon'])
-        >>>
+        ...
         >>> st.map(df)
 
         .. output::
            https://doc-map.streamlitapp.com/
            height: 650px
 
+        You can also customize the size and color of the datapoints:
+
+        >>> st.map(df, size=200, color='#0044ff')
+
+        And, finally, you can also choose different columns to use for the
+        latitude and longitude components, as well as set size and color of
+        each datapoint dynamically based on other columns:
+
+        >>> df = pd.DataFrame(
+        ...     np.random.randn(1000, 3) / [50, 50] + [37.76, -122.4],
+        ...     columns=['col1', 'col2', 'col3'])
+        ...
+        >>> df[col4] = np.arange[0, 1000]
+        >>>
+        >>> st.map(df,
+        ...     lat='col1',
+        ...     lon='col2',
+        ...     size='col3',
+        ...     color='col4')
+
         """
         map_proto = DeckGlJsonChartProto()
-        map_proto.json = to_deckgl_json(data, size, color, zoom)
+        map_proto.json = to_deckgl_json(data, lat, lon, size, color, map_style, zoom)
         map_proto.use_container_width = use_container_width
         return self.dg._enqueue("deck_gl_json_chart", map_proto)
 
@@ -194,8 +229,11 @@ def _get_zoom_level(distance: float) -> int:
 
 def to_deckgl_json(
     data: Data,
-    size: float,
-    color: Iterable[float],
+    lat: Optional[str],
+    lon: Optional[str],
+    size: Union[str, float],
+    color: Union[str, Iterable[float]],
+    map_style: Optional[str],
     zoom: Optional[int],
 ) -> str:
     if data is None:
@@ -208,39 +246,128 @@ def to_deckgl_json(
         return json.dumps(_DEFAULT_MAP)
 
     data = type_util.convert_anything_to_df(data)
-    formmated_column_names = ", ".join(map(repr, list(data.columns)))
 
-    allowed_lat_columns = {"lat", "latitude", "LAT", "LATITUDE"}
-    lat = next((d for d in allowed_lat_columns if d in data), None)
+    lat_col_name = _get_lat_or_lon_col_name(
+        data, "latitude", lat, {"lat", "latitude", "LAT", "LATITUDE"}
+    )
+    lon_col_name = _get_lat_or_lon_col_name(
+        data, "longitude", lon, {"lon", "longitude", "LON", "LONGITUDE"}
+    )
+    size, size_col_name = _get_size_arg_and_col_name(data, size)
+    color, data = _get_color_arg_and_calc_color_col(
+        data, color, lat_col_name, lon_col_name, size_col_name
+    )
 
-    if not lat:
-        formatted_allowed_column_name = ", ".join(
-            map(repr, sorted(allowed_lat_columns))
-        )
+    zoom, center_lat, center_lon = _get_viewport_details(
+        data, lat_col_name, lon_col_name, zoom
+    )
+
+    default = copy.deepcopy(_DEFAULT_MAP)
+    default["initialViewState"]["latitude"] = center_lat
+    default["initialViewState"]["longitude"] = center_lon
+    default["initialViewState"]["zoom"] = zoom
+    default["layers"] = [
+        {
+            "@@type": "ScatterplotLayer",
+            "getPosition": f"@@=[{lon_col_name}, {lat_col_name}]",
+            "getRadius": size,
+            "radiusScale": 10,
+            "radiusMinPixels": 3,
+            "getFillColor": color,
+            "data": data.to_dict("records"),
+        }
+    ]
+
+    if map_style:
+        if not config.get_option("mapbox.token"):
+            raise StreamlitAPIException(
+                "You need a Mapbox token in order to select a map type. "
+                "Refer to the docs for st.map for more information."
+            )
+        default["mapStyle"] = map_style
+
+    return json.dumps(default)
+
+
+def _get_lat_or_lon_col_name(
+    data: pd.DataFrame,
+    human_readable_name: str,
+    col_name_from_user: Optional[str],
+    default_col_names: set[str],
+) -> str:
+
+    if col_name_from_user in data.columns:
+        col_name = col_name_from_user
+
+    else:
+        # Try one of the default col_names:
+        col_name = next((d for d in default_col_names if d in data.columns), None)
+
+        if col_name is None:
+            formatted_allowed_col_name = ", ".join(map(repr, sorted(default_col_names)))
+            formmated_col_names = ", ".join(map(repr, list(data.columns)))
+
+            raise StreamlitAPIException(
+                f"Map data must contain a {human_readable_name} column named: "
+                f"{formatted_allowed_col_name}. Existing columns: {formmated_col_names}"
+            )
+
+    if data[col_name].isnull().values.any():
         raise StreamlitAPIException(
-            f"Map data must contain a latitude column named: {formatted_allowed_column_name}. "
-            f"Existing columns: {formmated_column_names}"
+            f"Column {col_name} is not allowed to contain null values, such "
+            "as NaN, NaT, or None."
         )
 
-    allowed_lon_columns = {"lon", "longitude", "LON", "LONGITUDE"}
-    lon = next((d for d in allowed_lon_columns if d in data), None)
+    return col_name
 
-    if not lon:
-        formatted_allowed_column_name = ", ".join(
-            map(repr, sorted(allowed_lon_columns))
-        )
-        raise StreamlitAPIException(
-            f"Map data must contain a longitude column named: {formatted_allowed_column_name}. "
-            f"Existing columns: {formmated_column_names}"
-        )
 
-    if data[lon].isnull().values.any() or data[lat].isnull().values.any():
-        raise StreamlitAPIException("Latitude and longitude data must be numeric.")
+def _get_size_arg_and_col_name(
+    data: pd.DataFrame,
+    size: Optional[str],
+) -> [str, str]:
 
-    min_lat = data[lat].min()
-    max_lat = data[lat].max()
-    min_lon = data[lon].min()
-    max_lon = data[lon].max()
+    col_name = None
+
+    if size in data.columns:
+        size = f"@@={size}"
+        col_name = size
+
+    return size, col_name
+
+
+def _get_color_arg_and_calc_color_col(
+    data: pd.DataFrame,
+    color: str,
+    lat_col_name: str,
+    lon_col_name: str,
+    size_col_name: str,
+) -> [str, pd.DataFrame]:
+
+    if color in data.columns:
+        color_arg = f"@@={color}"
+        new_data = data
+
+        if len(data[color]) > 0 and is_color(data[color][0]):
+            parsed_color = data[color].apply(to_int_color_tuple)
+
+            # Clone data to avoid transforming the original dataframe.
+            new_data = data[[lat_col_name, lon_col_name]].copy()
+
+            if size_col_name:
+                new_data[size_col_name] = data[size_col_name]
+
+            new_data[color] = parsed_color
+
+        return color_arg, new_data
+
+    return to_int_color_tuple(color), data
+
+
+def _get_viewport_details(data, lat_col_name, lon_col_name, zoom):
+    min_lat = data[lat_col_name].min()
+    max_lat = data[lat_col_name].max()
+    min_lon = data[lon_col_name].min()
+    max_lon = data[lon_col_name].max()
     center_lat = (max_lat + min_lat) / 2.0
     center_lon = (max_lon + min_lon) / 2.0
     range_lon = abs(max_lon - min_lon)
@@ -253,52 +380,4 @@ def to_deckgl_json(
             longitude_distance = range_lat
         zoom = _get_zoom_level(longitude_distance)
 
-    if isinstance(size, str):
-        size_col_name = size
-        size = "@@=size"
-    else:
-        size_col_name = None
-
-    color, color_col_name = get_int_color_tuple_or_column_name(color)
-
-    if color_col_name:
-        color = "@@=color"
-
-    # "+1" because itertuples includes the row index.
-    lon_col_index = data.columns.get_loc(lon) + 1
-    lat_col_index = data.columns.get_loc(lat) + 1
-    color_col_index = (
-        data.columns.get_loc(color_col_name) + 1 if color_col_name else None
-    )
-    size_col_index = data.columns.get_loc(size_col_name) + 1 if size_col_name else None
-    final_data = []
-    for row in data.itertuples():
-        row_dict = {
-            "lon": float(row[lon_col_index]),
-            "lat": float(row[lat_col_index]),
-        }
-
-        if color_col_name:
-            row_dict["color"] = row[color_col_index]
-
-        if color_col_name:
-            row_dict["size"] = row[size_col_index]
-
-        final_data.append(row_dict)
-
-    default = copy.deepcopy(_DEFAULT_MAP)
-    default["initialViewState"]["latitude"] = center_lat
-    default["initialViewState"]["longitude"] = center_lon
-    default["initialViewState"]["zoom"] = zoom
-    default["layers"] = [
-        {
-            "@@type": "ScatterplotLayer",
-            "getPosition": "@@=[lon, lat]",
-            "getRadius": size,
-            "radiusScale": 10,
-            "radiusMinPixels": 3,
-            "getFillColor": color,
-            "data": final_data,
-        }
-    ]
-    return json.dumps(default)
+    return zoom, center_lat, center_lon
