@@ -17,16 +17,19 @@ Altair is a Python visualization library based on Vega-Lite,
 a nice JSON schema for expressing graphs and charts.
 """
 
+from dataclasses import dataclass
 from datetime import date
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Hashable,
     List,
     Optional,
     Sequence,
     Tuple,
+    TypedDict,
     Union,
     cast,
 )
@@ -209,7 +212,7 @@ class ArrowAltairMixin:
 
         """
         proto = ArrowVegaLiteChartProto()
-        chart = _generate_chart(
+        chart, chart_info = _generate_chart(
             chart_type=ChartType.LINE,
             data=data,
             x_from_user=x,
@@ -220,9 +223,8 @@ class ArrowAltairMixin:
             height=height,
         )
         marshall(proto, chart, use_container_width, theme="streamlit")
-        last_index = last_index_for_melted_dataframes(data)
 
-        return self.dg._enqueue("arrow_line_chart", proto, last_index=last_index)
+        return self.dg._enqueue("arrow_line_chart", proto, chart_info=chart_info)
 
     @gather_metrics("_arrow_area_chart")
     def _arrow_area_chart(
@@ -309,7 +311,7 @@ class ArrowAltairMixin:
         """
 
         proto = ArrowVegaLiteChartProto()
-        chart = _generate_chart(
+        chart, chart_info = _generate_chart(
             chart_type=ChartType.AREA,
             data=data,
             x_from_user=x,
@@ -320,9 +322,8 @@ class ArrowAltairMixin:
             height=height,
         )
         marshall(proto, chart, use_container_width, theme="streamlit")
-        last_index = last_index_for_melted_dataframes(data)
 
-        return self.dg._enqueue("arrow_area_chart", proto, last_index=last_index)
+        return self.dg._enqueue("arrow_area_chart", proto, chart_info=chart_info)
 
     @gather_metrics("_arrow_bar_chart")
     def _arrow_bar_chart(
@@ -410,7 +411,7 @@ class ArrowAltairMixin:
         """
 
         proto = ArrowVegaLiteChartProto()
-        chart = _generate_chart(
+        chart, chart_info = _generate_chart(
             chart_type=ChartType.BAR,
             data=data,
             x_from_user=x,
@@ -421,9 +422,8 @@ class ArrowAltairMixin:
             height=height,
         )
         marshall(proto, chart, use_container_width, theme="streamlit")
-        last_index = last_index_for_melted_dataframes(data)
 
-        return self.dg._enqueue("arrow_bar_chart", proto, last_index=last_index)
+        return self.dg._enqueue("arrow_bar_chart", proto, chart_info=chart_info)
 
     @gather_metrics("_arrow_scatterplot_chart")
     def _arrow_scatterplot_chart(
@@ -442,7 +442,7 @@ class ArrowAltairMixin:
         TODO
         """
         proto = ArrowVegaLiteChartProto()
-        chart = _generate_chart(
+        chart, chart_info = _generate_chart(
             chart_type=ChartType.SCATTER,
             data=data,
             x_from_user=x,
@@ -453,9 +453,8 @@ class ArrowAltairMixin:
             height=height,
         )
         marshall(proto, chart, use_container_width, theme="streamlit")
-        last_index = last_index_for_melted_dataframes(data)
 
-        return self.dg._enqueue("arrow_scatterplot_chart", proto, last_index=last_index)
+        return self.dg._enqueue("arrow_scatterplot_chart", proto, chart_info=chart_info)
 
     @gather_metrics("_arrow_altair_chart")
     def _arrow_altair_chart(
@@ -543,7 +542,20 @@ def _is_date_column(df: pd.DataFrame, name: str) -> bool:
     return isinstance(column.iloc[0], date)
 
 
-def _prep_data(
+class PrepDataColumns(TypedDict):
+    x_column: Optional[str]
+    y_columns: List[str]
+    color_column: Optional[str]
+    size_column: Optional[str]
+
+
+@dataclass
+class ChartInfo:
+    last_index: Optional[Hashable]
+    columns: PrepDataColumns
+
+
+def prep_data(
     data: pd.DataFrame,
     x_column: Optional[str],
     y_columns: List[str],
@@ -593,25 +605,22 @@ def _prep_data(
     else:
         # Dataframe is in wide format. Need to melt it.
 
-        # First, pick only the columns we need.
-        # We want selected_data to be [x, color, size, y1, y2, y3, ...], where the first 3 only
-        # appear if unique (long_columns).
+        # We want selected_data to look like [x, color, size, y1, y2, y3, ...], where there's a section
+        # that is already in long format followed by a section that's in wide format and needs
+        # to be melted. In the example above, [x, color, size] is the long section, while [y1, ...] is
+        # wide.
 
         # Protect solid columns from collisions with y_columns by adding a suffix to them.
         protected_names = {
             col_name: (col_name + PROTECTION_SUFFIX) for col_name in long_columns
         }
 
-        solid_data = data[long_columns]
-        solid_data.rename(columns=protected_names, inplace=True)
+        # By doing this as 2 data[foo] statements we can have the same column be used
+        # as field that will be melted (e.g. y2) as for one that won't (e.g. size).
+        long_section = data[long_columns].rename(columns=protected_names)
+        wide_section = data[y_columns]
 
-        selected_data = pd.concat(
-            [
-                solid_data,
-                data[y_columns],
-            ],
-            axis=1,
-        )
+        selected_data = pd.concat([long_section, wide_section], axis=1)
 
         # Melt dataframe from wide format into long format.
 
@@ -639,7 +648,7 @@ def _prep_data(
 
 def _generate_chart(
     chart_type: ChartType,
-    data: Data,
+    data: Optional[Data],
     x_from_user: Optional[str] = None,
     y_from_user: Union[str, Sequence[str], None] = None,
     color_from_user: Union[str, Color, None] = None,
@@ -657,7 +666,21 @@ def _generate_chart(
     color_column, color_value = _parse_column(data, color_from_user)
     size_column, size_value = _parse_column(data, size_from_user)
 
-    data, x_column, y_column, color_column = _prep_data(
+    # Store this for add_rows.
+    chart_info = ChartInfo(
+        last_index=last_index_for_melted_dataframes(data),
+        columns=dict(
+            x_column=x_column,
+            y_columns=y_columns,
+            color_column=color_column,
+            size_column=size_column,
+        ),
+    )
+
+    # At this point, all foo_column variables are either None or actual columns that are guaranteed
+    # to exist.
+
+    data, x_column, y_column, color_column = prep_data(
         data, x_column, y_columns, color_column, size_column
     )
 
@@ -689,7 +712,7 @@ def _generate_chart(
     if size_enc is not None:
         chart = chart.encode(size=size_enc)
 
-    return chart.interactive()
+    return chart.interactive(), chart_info
 
 
 def _parse_column(
@@ -770,7 +793,7 @@ def _select_relevant_columns(data: pd.DataFrame, column_names) -> pd.DataFrame:
 
 def _get_opacity_enc(chart_type: ChartType, color_column: str, y_column: str) -> Any:
     if chart_type == ChartType.AREA and color_column:
-        return {y_column: 0.7}
+        return alt.OpacityValue(0.7)
 
 
 def _get_scale(data: pd.DataFrame, column_name: str) -> alt.Scale:
@@ -785,7 +808,7 @@ def _get_scale(data: pd.DataFrame, column_name: str) -> alt.Scale:
     return alt.Undefined
 
 
-def _get_x_type(chart_type: ChartType, x_column: str) -> Any:
+def _get_x_type(data: pd.DataFrame, chart_type: ChartType, x_column: str) -> Any:
     # Bar charts should have a discrete (ordinal) x-axis, UNLESS type is date/time
     # https://github.com/streamlit/streamlit/pull/2097#issuecomment-714802475
     if chart_type == ChartType.BAR and not _is_date_column(data, x_column):
@@ -818,7 +841,7 @@ def _get_x_enc(
         x_column,
         title=x_title,
         scale=_get_scale(data, x_column),
-        type=_get_x_type(chart_type, x_column),
+        type=_get_x_type(data, chart_type, x_column),
         axis=_get_axis_config(data, x_column, grid=False),
     )
 
