@@ -887,9 +887,16 @@ def _maybe_melt_data_for_add_rows(
 ) -> tuple[DFT | DataFrame, int | Any]:
     import pandas as pd
 
-    def _melt_data(
-        df: DataFrame, chart_info: Optional[ChartInfo]
-    ) -> tuple[DataFrame, int | Any]:
+    df = type_util.convert_anything_to_df(data)
+
+    # For some delta types we have to reshape the data structure
+    # otherwise the input data and the actual data used
+    # by vega_lite will be different, and it will throw an error.
+    if (
+        delta_type in DELTA_TYPES_THAT_MELT_DATAFRAMES
+        or delta_type in ARROW_DELTA_TYPES_THAT_MELT_DATAFRAMES
+    ):
+        # Make range indices start at last_index.
         if isinstance(df.index, pd.RangeIndex):
             old_step = _get_pandas_index_attr(df, "step")
 
@@ -911,21 +918,7 @@ def _maybe_melt_data_for_add_rows(
 
         df, _, _, _ = prep_data(df, **chart_info.columns)
 
-        return df, chart_info
-
-    # For some delta types we have to reshape the data structure
-    # otherwise the input data and the actual data used
-    # by vega_lite will be different, and it will throw an error.
-    if (
-        delta_type in DELTA_TYPES_THAT_MELT_DATAFRAMES
-        or delta_type in ARROW_DELTA_TYPES_THAT_MELT_DATAFRAMES
-    ):
-        data, chart_info = _melt_data(
-            df=type_util.convert_anything_to_df(data),
-            chart_info=chart_info,
-        )
-
-    return data, chart_info
+    return df, chart_info
 
 
 def _get_pandas_index_attr(

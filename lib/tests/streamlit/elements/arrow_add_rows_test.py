@@ -37,19 +37,10 @@ class DeltaGeneratorAddRowsTest(DeltaGeneratorTestCase):
 
         expected = pd.DataFrame(
             {
-                "index-4FLV4aXfCWIrl1KyIeJp": [1, 2, 3, 1, 2, 3, 1, 2, 3],
-                "color-xWSR9VDwhyLw5IHyGvPX": [
-                    "a",
-                    "a",
-                    "a",
-                    "b",
-                    "b",
-                    "b",
-                    "c",
-                    "c",
-                    "c",
-                ],
-                "values-7hbjwi6ywufr4T3VmvRh": [11, 12, 13, 21, 22, 23, 31, 32, 33],
+                "a": [11, 12, 13],
+                "b": [21, 22, 23],
+                "c": [31, 32, 33],
+                "index-4FLV4aXfCWIrl1KyIeJp": [1, 2, 3],
             }
         )
 
@@ -81,11 +72,38 @@ class DeltaGeneratorAddRowsTest(DeltaGeneratorTestCase):
 
         expected = pd.DataFrame(
             {
-                "b": [21, 22, 23, 21, 22, 23],
-                "color-xWSR9VDwhyLw5IHyGvPX": ["a", "a", "a", "c", "c", "c"],
-                "values-7hbjwi6ywufr4T3VmvRh": [11, 12, 13, 31, 32, 33],
+                "a": [11, 12, 13],
+                "b": [21, 22, 23],
+                "c": [31, 32, 33],
             }
         )
+        expected.index = pd.RangeIndex(start=1, stop=4, step=1)
+
+        for delta in deltas:
+            element = delta(DATAFRAME)
+            element._arrow_add_rows(NEW_ROWS)
+
+            proto = bytes_to_data_frame(
+                self.get_delta_from_queue().arrow_add_rows.data.data
+            )
+
+            pd.testing.assert_frame_equal(proto, expected)
+
+    def test_charts_with_fewer_args_than_cols(self):
+        deltas = [
+            lambda df: st._arrow_line_chart(df, x="b", y="a"),
+            lambda df: st._arrow_bar_chart(df, x="b", y="a"),
+            lambda df: st._arrow_area_chart(df, x="b", y="a"),
+            lambda df: st._arrow_scatterplot_chart(df, x="b", y="a", size="b"),
+        ]
+
+        expected = pd.DataFrame(
+            {
+                "a": [11, 12, 13],
+                "b": [21, 22, 23],
+            }
+        )
+        expected.index = pd.RangeIndex(start=1, stop=4, step=1)
 
         for delta in deltas:
             element = delta(DATAFRAME)
@@ -106,12 +124,12 @@ class DeltaGeneratorAddRowsTest(DeltaGeneratorTestCase):
 
         expected = pd.DataFrame(
             {
-                "b": [21, 22, 23, 21, 22, 23],
-                "c": [31, 32, 33, 31, 32, 33],
-                "color-xWSR9VDwhyLw5IHyGvPX": ["a", "a", "a", "c", "c", "c"],
-                "values-7hbjwi6ywufr4T3VmvRh": [11, 12, 13, 31, 32, 33],
+                "a": [11, 12, 13],
+                "b": [21, 22, 23],
+                "c": [31, 32, 33],
             }
         )
+        expected.index = pd.RangeIndex(start=1, stop=4, step=1)
 
         for delta in deltas:
             element = delta(DATAFRAME)

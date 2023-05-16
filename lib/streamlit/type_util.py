@@ -986,3 +986,82 @@ def maybe_raise_label_warnings(label: Optional[str], label_visibility: Optional[
             f"Unsupported label_visibility option '{label_visibility}'. "
             f"Valid values are 'visible', 'hidden' or 'collapsed'."
         )
+
+
+# The code below is copied from Altair, and slightly modified.
+# We copy this code here so we don't depend on private Altair functions.
+# Source: https://github.com/altair-viz/altair/blob/62ca5e37776f5cecb27e83c1fbd5d685a173095d/altair/utils/core.py
+
+# From Altair. See note above.
+# STREAMLIT: I prepended the function name with altair_ to avoid collision with our own infer_dtype,
+# above.
+def altair_infer_dtype(value: Any) -> str:
+    """Infer the dtype of the value.
+
+    This is a compatibility function for pandas infer_dtype,
+    with skipna=False regardless of the pandas version.
+    """
+    # STREAMLIT: I moved this import into the function.
+    try:
+        from pandas.api.types import infer_dtype as _infer_dtype
+    except ImportError:
+        # Import for pandas < 0.20.0
+        from pandas.lib import infer_dtype as _infer_dtype  # type: ignore[no-redef]
+
+    if not hasattr(infer_dtype, "_supports_skipna"):
+        try:
+            _infer_dtype([1], skipna=False)
+        except TypeError:
+            # pandas < 0.21.0 don't support skipna keyword
+            altair_infer_dtype._supports_skipna = False
+        else:
+            altair_infer_dtype._supports_skipna = True
+    if altair_infer_dtype._supports_skipna:
+        return _infer_dtype(value, skipna=False)
+    else:
+        return _infer_dtype(value)
+
+
+# From Altair. See note above.
+def infer_vegalite_type(data: "pd.Series") -> str:
+    """
+    From an array-like input, infer the correct vega typecode
+    ('ordinal', 'nominal', 'quantitative', or 'temporal')
+
+    Parameters
+    ----------
+    data: Numpy array or Pandas Series
+    """
+    # Otherwise, infer based on the dtype of the input
+    typ = altair_infer_dtype(data)
+
+    if typ in [
+        "floating",
+        "mixed-integer-float",
+        "integer",
+        "mixed-integer",
+        "complex",
+    ]:
+        return "quantitative"
+    elif typ == "categorical" and data.cat.ordered:
+        return ("ordinal", data.cat.categories.tolist())
+    elif typ in ["string", "bytes", "categorical", "boolean", "mixed", "unicode"]:
+        return "nominal"
+    elif typ in [
+        "datetime",
+        "datetime64",
+        "timedelta",
+        "timedelta64",
+        "date",
+        "time",
+        "period",
+    ]:
+        return "temporal"
+    else:
+        # STREAMLIT: I commented this out since Streamlit doesn't have a warnings object.
+        # warnings.warn(
+        #     "I don't know how to infer vegalite type from '{}'.  "
+        #     "Defaulting to nominal.".format(typ),
+        #     stacklevel=1,
+        # )
+        return "nominal"

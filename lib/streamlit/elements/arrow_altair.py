@@ -582,68 +582,35 @@ def prep_data(
                 "via the y parameter."
             )
 
-    # Make sure data is in long format.
-
+    # If using index, pull it into its own column.
     if x_column is None:
-        # Pull index into a column, to use as the x axis.
         x_column = SEPARATED_INDEX_COLUMN_NAME
         data = data.reset_index(names=x_column)
 
-    # These columns are by definition already in long format.
-    long_columns = [
-        c for c in set([x_column, color_column, size_column]) if c is not None
-    ]
+    # Drop columns we're not using.
+    used_columns = sorted(
+        [
+            c
+            for c in set([x_column, color_column, size_column, *y_columns])
+            if c is not None
+        ]
+    )
+    selected_data = data[used_columns]
 
+    # If need to melt data (this is done with Vega-Lite in the frontend via a "fold" transform),
+    # pick column names that are unlikely to collide with user-given names.
     if len(y_columns) == 1:
         y_column = y_columns[0]
-
-        if y_column not in long_columns:
-            long_columns.append(y_column)
-
-        long_data = data[long_columns]
-
     else:
-        # Dataframe is in wide format. Need to melt it.
-
-        # We want selected_data to look like [x, color, size, y1, y2, y3, ...], where there's a section
-        # that is already in long format followed by a section that's in wide format and needs
-        # to be melted. In the example above, [x, color, size] is the long section, while [y1, ...] is
-        # wide.
-
-        # Protect solid columns from collisions with y_columns by adding a suffix to them.
-        protected_names = {
-            col_name: (col_name + PROTECTION_SUFFIX) for col_name in long_columns
-        }
-
-        # By doing this as 2 data[foo] statements we can have the same column be used
-        # as field that will be melted (e.g. y2) as for one that won't (e.g. size).
-        long_section = data[long_columns].rename(columns=protected_names)
-        wide_section = data[y_columns]
-
-        selected_data = pd.concat([long_section, wide_section], axis=1)
-
-        # Melt dataframe from wide format into long format.
-
         y_column = MELTED_Y_COLUMN_NAME
         color_column = MELTED_COLOR_COLUMN_NAME
 
-        long_data = pd.melt(
-            selected_data,
-            id_vars=protected_names.values(),
-            value_name=y_column,
-            var_name=color_column,
-        )
-
-        # Undo the suffix thing.
-        long_data.rename(
-            columns={v: k for k, v in protected_names.items()}, inplace=True
-        )
-
     # Arrow has problems with object types after melting two different dtypes
     # pyarrow.lib.ArrowTypeError: "Expected a <TYPE> object, got a object"
-    cleaned_data = type_util.fix_arrow_incompatible_column_types(long_data)
+    prepped_data = type_util.fix_arrow_incompatible_column_types(selected_data)
 
-    return cleaned_data, x_column, y_column, color_column
+    # Return the data, but also the new names to use for x, y, and color.
+    return prepped_data, x_column, y_column, color_column
 
 
 def _generate_chart(
@@ -689,16 +656,22 @@ def _generate_chart(
         mark=chart_type.value["mark_type"],
         width=width,
         height=height,
-    ).encode(
-        x=_get_x_enc(data, chart_type, x_column),
-        y=_get_y_enc(data, y_column),
-        tooltip=_get_tooltip_enc(
-            x_column,
-            y_column,
-            color_column,
-            size_column,
-        ),
     )
+
+    if len(y_columns) > 1:
+        chart = chart.transform_fold(y_columns, as_=[color_column, y_column])
+
+    if x_column is not None and y_columns:
+        chart = chart.encode(
+            x=_get_x_enc(data, chart_type, x_column),
+            y=_get_y_enc(data, y_column, y_columns),
+            tooltip=_get_tooltip_enc(
+                x_column,
+                y_column,
+                color_column,
+                size_column,
+            ),
+        )
 
     opacity_enc = _get_opacity_enc(chart_type, color_column, y_column)
     if opacity_enc is not None:
@@ -846,17 +819,24 @@ def _get_x_enc(
     )
 
 
-def _get_y_enc(data: pd.DataFrame, y_column: str) -> alt.Y:
+def _get_y_enc(data: pd.DataFrame, y_column: str, wide_y_columns: List[str]) -> alt.Y:
     if y_column == MELTED_Y_COLUMN_NAME:
         y_title = MELTED_Y_COLUMN_TITLE
     else:
         y_title = y_column
 
+    # For dataframes that will be folded, we use the type of the 1st y column as a proxy to
+    # configure the chart. This is correct 99% of the times, since all y columns typically have the
+    # same data type.
+    first_y_column = wide_y_columns[0]
+    column_type = type_util.infer_vegalite_type(data[first_y_column])
+
     return alt.Y(
-        y_column,
+        field=y_column,
         title=y_title,
-        scale=_get_scale(data, y_column),
-        axis=_get_axis_config(data, y_column, grid=True),
+        type=column_type,
+        scale=_get_scale(data, first_y_column),
+        axis=_get_axis_config(data, first_y_column, grid=True),
     )
 
 
@@ -874,17 +854,28 @@ def _get_tooltip_enc(
         tooltip.append(alt.Tooltip(x_column))
 
     if y_column == MELTED_Y_COLUMN_NAME:
-        tooltip.append(alt.Tooltip(y_column, title=MELTED_Y_COLUMN_TITLE))
+        tooltip.append(
+            alt.Tooltip(
+                y_column,
+                title=MELTED_Y_COLUMN_TITLE,
+                type="quantitative",  # Just picked something random. Doesn't really matter!
+            )
+        )
     else:
         tooltip.append(alt.Tooltip(y_column))
 
     if color_column:
         # Use a human-readable title for the color.
         if color_column == MELTED_COLOR_COLUMN_NAME:
-            column_title = MELTED_COLOR_COLUMN_TITLE
+            tooltip.append(
+                alt.Tooltip(
+                    color_column,
+                    title=MELTED_COLOR_COLUMN_TITLE,
+                    type="nominal",
+                )
+            )
         else:
-            column_title = color_column
-        tooltip.append(alt.Tooltip(color_column, title=column_title))
+            tooltip.append(alt.Tooltip(color_column))
 
     if size_column:
         tooltip.append(alt.Tooltip(size_column))
@@ -932,19 +923,24 @@ def _get_color_enc(
         return alt.ColorValue(to_css_color(color_value))
 
     elif isinstance(color_value, (list, tuple)):
-        color_enc = alt.Color(
+        return alt.Color(
             color_column,
             scale=alt.Scale(range=[to_css_color(c) for c in color_value]),
             legend=LEGEND_SETTINGS,
+            type="nominal",
         )
 
     elif color_column is None:
         return None
 
     elif color_column:
+        if color_column == MELTED_COLOR_COLUMN_NAME:
+            column_type = "nominal"
+        else:
+            column_type = type_util.infer_vegalite_type(data[color_column])
+
         color_enc = alt.Color(
-            color_column,
-            legend=LEGEND_SETTINGS,
+            field=color_column, legend=LEGEND_SETTINGS, type=column_type
         )
 
         # Fix title if DF was melted
@@ -959,18 +955,12 @@ def _get_color_enc(
             color_enc["scale"] = alt.Scale(range=data[color_column].unique().tolist())
             color_enc["legend"] = None
 
+        return color_enc
+
     else:
         raise StreamlitAPIException(
             f"This does not look like a valid color or column: {color_from_user}."
         )
-
-    # Fix title if DF was melted
-    if color_column == MELTED_COLOR_COLUMN_NAME:
-        # This has to contain an empty space, otherwise the
-        # full y-axis disappears (maybe a bug in vega-lite)?
-        color_enc["title"] = " "
-
-    return color_enc
 
 
 def marshall(
