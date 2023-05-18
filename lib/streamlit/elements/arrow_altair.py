@@ -120,11 +120,13 @@ class ArrowAltairMixin:
             the data of all remaining columns as data series. This argument
             can only be supplied by keyword.
 
-        color : str, sequence of str, tuple, sequence of tuple, or None
-            The color to use for different lines in this chart. Can be:
+        color : str, tuple, sequence of str, sequence of tuple, or None
+            The color to use for different lines in this chart. This argument
+            can only be supplied by keyword.
 
-            **If the chart will only have 1 line:**
+            For a line chart with just 1 line, this can be:
 
+            - None, to use the default color.
             - A hex string like "#ffaa00" or "#ffaa0088".
             - A Matplotlib-compatible color name like "blue". See full list
               at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
@@ -134,17 +136,19 @@ class ArrowAltairMixin:
               the right data types or in the right interval, this function tries
               to guess the right thing to do.
 
-            **If the chart will have multiple lines and the dataframe is in
-            long format:**
+            For a line chart with multiple lines, where the dataframe is in
+            long format (that is, y is None or just 1 column), this should be:
 
+            - None, to use the default colors.
             - The name of the column to use for the color. If the values in
               this column look like real colors, those will be used. If they
               do not, then a different column will be automatically selected
               to represent each value.
 
-            **If the chart will have multiple lines and the dataframe is in
-            wide format:**
+            For a line chart with multiple lines, where the dataframe is in
+            wide format (that is, y is a sequence of columns), this should be:
 
+            - None, to use the default colors.
             - A list of string colors or color tuples to be used for each of
               the lines in the chart. For example, if the chart will have 3
               lines can you can set ``color=["gold", "pink", "blue"]``.
@@ -205,7 +209,7 @@ class ArrowAltairMixin:
         ...     chart_data,
         ...     x='col1',
         ...     y=['col2', 'col3'],
-        ...     color=['red', 'black'],  # Optional
+        ...     color=['red', 'black'],
         ... )
 
         """
@@ -261,22 +265,38 @@ class ArrowAltairMixin:
             the scenes. If None, draws the data of all remaining columns as data series.
             This argument can only be supplied by keyword.
 
-        color : str, sequence of str, tuple, sequence of tuple, or None
-            The color to use for different lines in this chart. Can be:
+        color : str, tuple, sequence of str, sequence of tuple, or None
+            The color to use for different lines in this chart. This argument
+            can only be supplied by keyword.
 
-            **If the chart will only have 1 line:**
+            For an area chart with just 1 line, this can be:
 
-            - A string color, like "#FFAA0088", "#FFAA00" or "pink".
-            - A color tuple, like (255, 128, 0, 0.5) or (255, 128, 0), where the RGB components
-              are ints in the interval [0, 255] and the alpha component is a float in [0.0, 1.0].
+            - None, to use the default color.
+            - A hex string like "#ffaa00" or "#ffaa0088".
+            - A Matplotlib-compatible color name like "blue". See full list
+              at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
+            - A color tuple like (255, 255, 128) or (255, 255, 128, 0.5), where
+              the RGB components are ints in the interval [0, 255] and the alpha
+              component is a float in the interval [0.0, 1.0]. If they aren't
+              the right data types or in the right interval, this function tries
+              to guess the right thing to do.
 
-            **If the chart will have multiple lines and the dataframe is in long format:**
+            For an area chart with multiple lines, where the dataframe is in
+            long format (that is, y is None or just 1 column), this should be:
 
-            - The name of the column to use for the color.
+            - None, to use the default colors.
+            - The name of the column to use for the color. If the values in
+              this column look like real colors, those will be used. If they
+              do not, then a different column will be automatically selected
+              to represent each value.
 
-            **If the chart will have multiple lines and the dataframe is in wide format:**
+            For an area chart with multiple lines, where the dataframe is in
+            wide format (that is, y is a sequence of columns), this should be:
 
-            - A list of string colors or color tuples to be used for each of the lines in the chart.
+            - None, to use the default colors.
+            - A list of string colors or color tuples to be used for each of
+              the lines in the chart. For example, if the chart will have 3
+              lines can you can set ``color=["gold", "pink", "blue"]``.
 
         width : int
             The chart width in pixels. If 0, selects the width automatically.
@@ -305,6 +325,36 @@ class ArrowAltairMixin:
         .. output::
            https://static.streamlit.io/0.50.0-td2L/index.html?id=Pp65STuFj65cJRDfhGh4Jt
            height: 220px
+
+        You can also choose different columns to use for x and y, as well as set
+        the color dynamically based on a 3rd column (assuming your dataframe is in
+        long format):
+
+        >>> chart_data = pd.DataFrame(
+        ...     np.random.randn(20, 4),
+        ...     columns=['col1', 'col2', 'col3'])
+        ...
+        >>> st._arrow_area_chart(
+        ...     chart_data,
+        ...     x='col1',
+        ...     y='col2',
+        ...     color='col3',
+        ... )
+
+        Finally, if your dataframe is in wide format, you can group multiple
+        columns under the y argument to show multiple lines with different
+        colors:
+
+        >>> chart_data = pd.DataFrame(
+        ...     np.random.randn(20, 4),
+        ...     columns=['col1', 'col2', 'col3'])
+        ...
+        >>> st._arrow_area_chart(
+        ...     chart_data,
+        ...     x='col1',
+        ...     y=['col2', 'col3'],
+        ...     color=['red', 'black'],
+        ... )
 
         """
 
@@ -360,22 +410,38 @@ class ArrowAltairMixin:
             the scenes. If None, draws the data of all remaining columns as data series.
             This argument can only be supplied by keyword.
 
-        color : str, sequence of str, tuple, sequence of tuple, or None
-            The color to use for different series this chart. Can be:
+        color : str, tuple, sequence of str, sequence of tuple, or None
+            The color to use for different lines in this chart. This argument
+            can only be supplied by keyword.
 
-            **If the chart will only have 1 series:**
+            For a bar chart with just 1 bar series, this can be:
 
-            - A string color, like "#FFAA0088", "#FFAA00" or "pink".
-            - A color tuple, like (255, 128, 0, 0.5) or (255, 128, 0), where the RGB components
-              are ints in the interval [0, 255] and the alpha component is a float in [0.0, 1.0].
+            - None, to use the default color.
+            - A hex string like "#ffaa00" or "#ffaa0088".
+            - A Matplotlib-compatible color name like "blue". See full list
+              at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
+            - A color tuple like (255, 255, 128) or (255, 255, 128, 0.5), where
+              the RGB components are ints in the interval [0, 255] and the alpha
+              component is a float in the interval [0.0, 1.0]. If they aren't
+              the right data types or in the right interval, this function tries
+              to guess the right thing to do.
 
-            **If the chart will have multiple series and the dataframe is in long format:**
+            For a bar chart with multiple series, where the dataframe is in
+            long format (that is, y is None or just 1 column), this should be:
 
-            - The name of the column to use for the color.
+            - None, to use the default colors.
+            - The name of the column to use for the color. If the values in
+              this column look like real colors, those will be used. If they
+              do not, then a different column will be automatically selected
+              to represent each value.
 
-            **If the chart will have multiple series and the dataframe is in wide format:**
+            For a bar chart with multiple series, where the dataframe is in
+            wide format (that is, y is a sequence of columns), this should be:
 
-            - A list of string colors or color tuples to be used for each of the series in the chart.
+            - None, to use the default colors.
+            - A list of string colors or color tuples to be used for each of
+              the lines in the chart. For example, if the chart will have 3
+              lines can you can set ``color=["gold", "pink", "blue"]``.
 
         width : int
             The chart width in pixels. If 0, selects the width automatically.
@@ -406,6 +472,36 @@ class ArrowAltairMixin:
            https://static.streamlit.io/0.66.0-2BLtg/index.html?id=GaYDn6vxskvBUkBwsGVEaL
            height: 220px
 
+        You can also choose different columns to use for x and y, as well as set
+        the color dynamically based on a 3rd column (assuming your dataframe is in
+        long format):
+
+        >>> chart_data = pd.DataFrame(
+        ...     np.random.randn(20, 4),
+        ...     columns=['col1', 'col2', 'col3'])
+        ...
+        >>> st._arrow_bar_chart(
+        ...     chart_data,
+        ...     x='col1',
+        ...     y='col2',
+        ...     color='col3',
+        ... )
+
+        Finally, if your dataframe is in wide format, you can group multiple
+        columns under the y argument to show multiple lines with different
+        colors:
+
+        >>> chart_data = pd.DataFrame(
+        ...     np.random.randn(20, 4),
+        ...     columns=['col1', 'col2', 'col3'])
+        ...
+        >>> st._arrow_bar_chart(
+        ...     chart_data,
+        ...     x='col1',
+        ...     y=['col2', 'col3'],
+        ...     color=['red', 'black'],
+        ... )
+
         """
 
         proto = ArrowVegaLiteChartProto()
@@ -430,14 +526,138 @@ class ArrowAltairMixin:
         *,
         x: Optional[str] = None,
         y: Union[str, Sequence[str], None] = None,
-        size: Union[str, float, int, None] = None,
+        size: Union[str, float, None] = None,
         color: Union[str, Color, List[Color], None] = None,
         width: int = 0,
         height: int = 0,
         use_container_width: bool = True,
     ) -> "DeltaGenerator":
-        """
-        TODO
+        """Display a scatterplot chart.
+
+        This is syntax-sugar around st.altair_chart. The main difference
+        is this command uses the data's own column and indices to figure out
+        the chart's spec. As a result this is easier to use for many "just plot
+        this" scenarios, while being less customizable.
+
+        If st.scatterplot_chart does not guess the data specification
+        correctly, try specifying your desired chart using st.altair_chart.
+
+        Parameters
+        ----------
+        data : pandas.DataFrame, pandas.Styler, pyarrow.Table, numpy.ndarray, pyspark.sql.DataFrame, snowflake.snowpark.dataframe.DataFrame, snowflake.snowpark.table.Table, Iterable, dict or None
+            Data to be plotted.
+            Pyarrow tables are not supported by Streamlit's legacy DataFrame serialization
+            (i.e. with `config.dataFrameSerialization = "legacy"`).
+            To use pyarrow tables, please enable pyarrow by changing the config setting,
+            `config.dataFrameSerialization = "arrow"`.
+
+        x : str or None
+            Column name to use for the x-axis. If None, uses the data index for the x-axis.
+            This argument can only be supplied by keyword.
+
+        y : str, sequence of str, or None
+            Column name(s) to use for the y-axis. If a sequence of strings, draws several series
+            on the same chart by melting your wide-format table into a long-format table behind
+            the scenes. If None, draws the data of all remaining columns as data series.
+            This argument can only be supplied by keyword.
+
+        size : str, float, or None
+            The size of the circles representing each datapoint in this chart.
+            This can be:
+
+            - A number like 100, to specify a single size to use for all
+              datapoints.
+            - The name of the column to use for the size. This allows each
+              datapoint to be represented by a circle of a different size.
+
+        color : str, tuple, sequence of str, sequence of tuple, or None
+            The color to use for different series in this chart. This argument
+            can only be supplied by keyword.
+
+            For a scatterplot chart with just 1 series, this can be:
+
+            - None, to use the default color.
+            - A hex string like "#ffaa00" or "#ffaa0088".
+            - A Matplotlib-compatible color name like "blue". See full list
+              at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
+            - A color tuple like (255, 255, 128) or (255, 255, 128, 0.5), where
+              the RGB components are ints in the interval [0, 255] and the alpha
+              component is a float in the interval [0.0, 1.0]. If they aren't
+              the right data types or in the right interval, this function tries
+              to guess the right thing to do.
+
+            For a scatterplot chart with multiple series, where the dataframe
+            is in long format (that is, y is None or just 1 column), this
+            should be:
+
+            - None, to use the default colors.
+            - The name of the column to use for the color. If the values in
+              this column look like real colors, those will be used. If they
+              do not, then a different column will be automatically selected
+              to represent each value.
+
+            For a scatterplot chart with multiple series, where the dataframe
+            is in wide format (that is, y is a sequence of columns), this
+            should be:
+
+            - None, to use the default colors.
+            - A list of string colors or color tuples to be used for each of
+              the series in the chart. For example, if the chart will have 3
+              series can you can set ``color=["gold", "pink", "blue"]``.
+
+        width : int
+            The chart width in pixels. If 0, selects the width automatically.
+            This argument can only be supplied by keyword.
+
+        height : int
+            The chart height in pixels. If 0, selects the height automatically.
+            This argument can only be supplied by keyword.
+
+        use_container_width : bool
+            If True, set the chart width to the column width. This takes
+            precedence over the width argument.
+            This argument can only be supplied by keyword.
+
+        Example
+        -------
+        >>> import streamlit as st
+        >>> import pandas as pd
+        >>> import numpy as np
+        >>>
+        >>> chart_data = pd.DataFrame(
+        ...     np.random.randn(20, 3),
+        ...     columns=['a', 'b', 'c'])
+        ...
+        >>> st._arrow_scatterplot_chart(chart_data)
+
+        You can also choose different columns to use for x and y, as well as set
+        the color dynamically based on a 3rd column (assuming your dataframe is in
+        long format):
+
+        >>> chart_data = pd.DataFrame(
+        ...     np.random.randn(20, 4),
+        ...     columns=['col1', 'col2', 'col3', 'col4'])
+        ...
+        >>> st._arrow_scatterplot_chart(
+        ...     chart_data,
+        ...     x='col1',
+        ...     y='col2',
+        ...     color='col3',
+        ...     size='col4',
+        ... )
+
+        Finally, if your dataframe is in wide format, you can group multiple
+        columns under the y argument to show multiple series with different
+        colors:
+
+        >>> st._arrow_scatterplot_chart(
+        ...     chart_data,
+        ...     x='col1',
+        ...     y=['col2', 'col3'],
+        ...     size='col4',
+        ...     color=['red', 'black'],
+        ... )
+
         """
         proto = ArrowVegaLiteChartProto()
         chart, chart_info = _generate_chart(
