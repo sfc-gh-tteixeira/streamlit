@@ -822,7 +822,7 @@ def _generate_chart(
     x_from_user: Optional[str] = None,
     y_from_user: Union[str, Sequence[str], None] = None,
     color_from_user: Union[str, Color, None] = None,
-    size_from_user: Union[str, float, int, None] = None,
+    size_from_user: Union[str, float, None] = None,
     width: int = 0,
     height: int = 0,
 ) -> Chart:
@@ -1093,7 +1093,7 @@ def _get_tooltip_enc(
 def _get_size_enc(
     chart_type: ChartType,
     size_column: Optional[str],
-    size_value: Union[str, float, int, None],
+    size_value: Union[str, float, None],
 ) -> Any:
     if chart_type == ChartType.SCATTER:
         if size_column is not None:
