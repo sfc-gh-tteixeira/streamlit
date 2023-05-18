@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import re
 import types
 from enum import Enum, auto
@@ -481,7 +482,8 @@ def convert_anything_to_df(
     data: Any,
     max_unevaluated_rows: int = MAX_UNEVALUATED_DF_ROWS,
     ensure_copy: bool = False,
-) -> DataFrame:
+    allow_styler: bool = False,
+) -> Union[DataFrame, "Styler"]:
     """Try to convert different formats to a Pandas Dataframe.
 
     Parameters
@@ -496,16 +498,15 @@ def convert_anything_to_df(
         If True, make sure to always return a copy of the data. If False, it depends on the
         type of the data. For example, a Pandas DataFrame will be returned as-is.
 
+    allow_styler: bool
+        If True, allows this to return a Pandas Styler object as well. If False, drops all
+        styles from the Styler and returns a plain Pandas DataFrame.
+
     Returns
     -------
-    pandas.DataFrame
+    pandas.DataFrame or pandas.Styler
 
     """
-    if data is None:
-        # Use an empty-ish dict because if we use None, in some charts the x axis
-        # labels rotate 90 degrees. No idea why. Need to debug.
-        return DataFrame({"": []})
-
     # This is inefficient as the data will be converted back to Arrow
     # when marshalled to protobuf, but area/bar/line charts need
     # DataFrame magic to generate the correct output.
@@ -516,7 +517,15 @@ def convert_anything_to_df(
         return data.copy() if ensure_copy else data
 
     if is_pandas_styler(data):
-        return data.data.copy() if ensure_copy else data.data
+        if allow_styler:
+            if ensure_copy:
+                out = copy.deepcopy(data)
+                out.data = data.data.copy()
+                return out
+            else:
+                return data
+        else:
+            return data.data.copy() if ensure_copy else data.data
 
     if is_type(data, "numpy.ndarray"):
         if len(data.shape) == 0:

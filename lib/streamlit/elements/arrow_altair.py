@@ -17,19 +17,16 @@ Altair is a Python visualization library based on Vega-Lite,
 a nice JSON schema for expressing graphs and charts.
 """
 
-from dataclasses import dataclass
 from datetime import date
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    Hashable,
     List,
     Optional,
     Sequence,
     Tuple,
-    TypedDict,
     Union,
     cast,
 )
@@ -43,6 +40,7 @@ from typing_extensions import Literal
 import streamlit.elements.arrow_vega_lite as arrow_vega_lite
 from streamlit import type_util
 from streamlit.color_util import Color, is_color_str, to_css_color
+from streamlit.elements.altair_utils import ChartInfo
 from streamlit.elements.arrow import Data
 from streamlit.elements.utils import last_index_for_melted_dataframes
 from streamlit.errors import Error, StreamlitAPIException
@@ -542,29 +540,22 @@ def _is_date_column(df: pd.DataFrame, name: str) -> bool:
     return isinstance(column.iloc[0], date)
 
 
-class PrepDataColumns(TypedDict):
-    x_column: Optional[str]
-    y_columns: List[str]
-    color_column: Optional[str]
-    size_column: Optional[str]
-
-
-@dataclass
-class ChartInfo:
-    last_index: Optional[Hashable]
-    columns: PrepDataColumns
-
-
 def prep_data(
     data: pd.DataFrame,
     x_column: Optional[str],
     y_columns: List[str],
     color_column: Optional[str],
     size_column: Optional[str],
-) -> Tuple[pd.DataFrame, str, str, Optional[str]]:
-    """Determines based on the selected x & y parameter, if the data needs to
-    be converted to a long-format dataframe. If so, it returns the melted dataframe
-    and the x, y, and color columns used for rendering the chart.
+) -> Tuple[pd.DataFrame, str]:
+    """Prepares the data for charting.
+
+    Does a few things:
+    * Runs sanity checks
+    * Resets the index if needed
+    * Removes unnecessary columns
+
+    Returns the prepared dataframe and the new name of the x_column (taking the index reset into
+    consideration).
     """
 
     # Check the data for correctness.
@@ -597,20 +588,12 @@ def prep_data(
     )
     selected_data = data[used_columns]
 
-    # If need to melt data (this is done with Vega-Lite in the frontend via a "fold" transform),
-    # pick column names that are unlikely to collide with user-given names.
-    if len(y_columns) == 1:
-        y_column = y_columns[0]
-    else:
-        y_column = MELTED_Y_COLUMN_NAME
-        color_column = MELTED_COLOR_COLUMN_NAME
-
     # Arrow has problems with object types after melting two different dtypes
     # pyarrow.lib.ArrowTypeError: "Expected a <TYPE> object, got a object"
     prepped_data = type_util.fix_arrow_incompatible_column_types(selected_data)
 
     # Return the data, but also the new names to use for x, y, and color.
-    return prepped_data, x_column, y_column, color_column
+    return prepped_data, x_column
 
 
 def _generate_chart(
@@ -647,9 +630,7 @@ def _generate_chart(
     # At this point, all foo_column variables are either None or actual columns that are guaranteed
     # to exist.
 
-    data, x_column, y_column, color_column = prep_data(
-        data, x_column, y_columns, color_column, size_column
-    )
+    data, x_column = prep_data(data, x_column, y_columns, color_column, size_column)
 
     chart = alt.Chart(
         data,
@@ -658,7 +639,13 @@ def _generate_chart(
         height=height,
     )
 
-    if len(y_columns) > 1:
+    if len(y_columns) == 1:
+        y_column = y_columns[0]
+    else:
+        # If need to melt data (this is done with Vega-Lite in the frontend via a "fold" transform),
+        # pick column names that are unlikely to collide with user-given names.
+        y_column = MELTED_Y_COLUMN_NAME
+        color_column = MELTED_COLOR_COLUMN_NAME
         chart = chart.transform_fold(y_columns, as_=[color_column, y_column])
 
     if x_column is not None and y_columns:

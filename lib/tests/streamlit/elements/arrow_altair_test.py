@@ -80,7 +80,7 @@ class ArrowAltairTest(DeltaGeneratorTestCase):
             {"index": [date(2019, 8, 9), date(2019, 8, 10)], "numbers": [1, 10]}
         ).set_index("index")
 
-        chart = altair._generate_chart(ChartType.LINE, df)
+        chart, _ = altair._generate_chart(ChartType.LINE, df)
         st._arrow_altair_chart(chart)
         proto = self.get_delta_from_queue().new_element.arrow_vega_lite_chart
         spec_dict = json.loads(proto.spec)
@@ -105,7 +105,7 @@ class ArrowAltairTest(DeltaGeneratorTestCase):
             {"index": [date(2019, 8, 9), date(2019, 8, 10)], "numbers": [1, 10]}
         ).set_index("index")
 
-        chart = altair._generate_chart(ChartType.LINE, df)
+        chart, _ = altair._generate_chart(ChartType.LINE, df)
         st._arrow_altair_chart(chart, theme=theme_value)
 
         el = self.get_delta_from_queue().new_element
@@ -116,7 +116,7 @@ class ArrowAltairTest(DeltaGeneratorTestCase):
             {"index": [date(2019, 8, 9), date(2019, 8, 10)], "numbers": [1, 10]}
         ).set_index("index")
 
-        chart = altair._generate_chart(ChartType.LINE, df)
+        chart, _ = altair._generate_chart(ChartType.LINE, df)
         with self.assertRaises(StreamlitAPIException) as exc:
             st._arrow_altair_chart(chart, theme="bad_theme")
 
@@ -133,9 +133,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         """Test st._arrow_line_chart."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         EXPECTED_DATAFRAME = pd.DataFrame(
-            [[0, "a", 20], [0, "b", 30], [0, "c", 50]],
-            index=[0, 1, 2],
-            columns=["index", "variable", "value"],
+            [[20, 30, 50, 0]], columns=["a", "b", "c", "index-4FLV4aXfCWIrl1KyIeJp"]
         )
 
         st._arrow_line_chart(df, width=640, height=480)
@@ -189,9 +187,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
     ):
         """Test x/y-sequence support for built-in charts."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
-        EXPECTED_DATAFRAME = pd.DataFrame(
-            [[20, "b", 30], [20, "c", 50]], columns=["a", "variable", "value"]
-        )
+        EXPECTED_DATAFRAME = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
 
         chart_command(df, x="a", y=["b", "c"])
 
@@ -200,7 +196,9 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
 
         self.assertEqual(chart_spec["mark"], altair_type)
         self.assertEqual(chart_spec["encoding"]["x"]["field"], "a")
-        self.assertEqual(chart_spec["encoding"]["y"]["field"], "value")
+        self.assertEqual(
+            chart_spec["encoding"]["y"]["field"], "values-7hbjwi6ywufr4T3VmvRh"
+        )
 
         pd.testing.assert_frame_equal(
             bytes_to_data_frame(proto.datasets[0].data.data),
@@ -256,10 +254,11 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         """Test st._arrow_line_chart with a generic index."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         df.set_index("a", inplace=True)
+
         EXPECTED_DATAFRAME = pd.DataFrame(
-            [[20, "b", 30], [20, "c", 50]],
-            index=[0, 1],
-            columns=["a", "variable", "value"],
+            [[30, 50, 20]],
+            columns=["b", "c", "index-4FLV4aXfCWIrl1KyIeJp"],
+            index=pd.RangeIndex(0, 1, 1),
         )
 
         st._arrow_line_chart(df)
@@ -276,9 +275,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         """Test st._arrow_area_chart."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         EXPECTED_DATAFRAME = pd.DataFrame(
-            [[0, "a", 20], [0, "b", 30], [0, "c", 50]],
-            index=[0, 1, 2],
-            columns=["index", "variable", "value"],
+            [[20, 30, 50, 0]],
+            columns=["a", "b", "c", "index-4FLV4aXfCWIrl1KyIeJp"],
         )
 
         st._arrow_area_chart(df)
@@ -295,9 +293,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         """Test st._arrow_bar_chart."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         EXPECTED_DATAFRAME = pd.DataFrame(
-            [[0, "a", 20], [0, "b", 30], [0, "c", 50]],
-            index=[0, 1, 2],
-            columns=["index", "variable", "value"],
+            [[20, 30, 50, 0]],
+            columns=["a", "b", "c", "index-4FLV4aXfCWIrl1KyIeJp"],
         )
 
         st._arrow_bar_chart(df, width=640, height=480)
