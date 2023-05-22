@@ -233,11 +233,14 @@ class DataFrameSelectorMixin:
             - A hex string like "#ffaa00" or "#ffaa0088".
             - A Matplotlib-compatible color name like "blue". See full list
               at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - A color tuple like (255, 255, 128) or (255, 255, 128, 0.5), where
-              the RGB components are ints in the interval [0, 255] and the alpha
-              component is a float in the interval [0.0, 1.0]. If they aren't
-              the right data types or in the right interval, this function tries
-              to guess the right thing to do.
+            - An RGB tuple with the red, green, and blue values for the color
+              specified as ints from 0 to 255 or floats from 0.0 to 1.0.
+            - An RGBA tuple with the red, green, blue, and alpha values for
+              the color, specified as ints from 0 to 255 or floats from 0.0
+              to 1.0.
+            - The name of the column to use for the color. Cells in this column
+              should contain colors represented in one of the formats described
+              above: hex string, named color, or color tuple.
 
             For a line chart with multiple lines, where the dataframe is in
             long format (that is, y is None or just 1 column), this should be:
@@ -385,11 +388,14 @@ class DataFrameSelectorMixin:
             - A hex string like "#ffaa00" or "#ffaa0088".
             - A Matplotlib-compatible color name like "blue". See full list
               at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - A color tuple like (255, 255, 128) or (255, 255, 128, 0.5), where
-              the RGB components are ints in the interval [0, 255] and the alpha
-              component is a float in the interval [0.0, 1.0]. If they aren't
-              the right data types or in the right interval, this function tries
-              to guess the right thing to do.
+            - An RGB tuple with the red, green, and blue values for the color
+              specified as ints from 0 to 255 or floats from 0.0 to 1.0.
+            - An RGBA tuple with the red, green, blue, and alpha values for
+              the color, specified as ints from 0 to 255 or floats from 0.0
+              to 1.0.
+            - The name of the column to use for the color. Cells in this column
+              should contain colors represented in one of the formats described
+              above: hex string, named color, or color tuple.
 
             For an area chart with multiple lines, where the dataframe is in
             long format (that is, y is None or just 1 column), this should be:
@@ -537,11 +543,14 @@ class DataFrameSelectorMixin:
             - A hex string like "#ffaa00" or "#ffaa0088".
             - A Matplotlib-compatible color name like "blue". See full list
               at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - A color tuple like (255, 255, 128) or (255, 255, 128, 0.5), where
-              the RGB components are ints in the interval [0, 255] and the alpha
-              component is a float in the interval [0.0, 1.0]. If they aren't
-              the right data types or in the right interval, this function tries
-              to guess the right thing to do.
+            - An RGB tuple with the red, green, and blue values for the color
+              specified as ints from 0 to 255 or floats from 0.0 to 1.0.
+            - An RGBA tuple with the red, green, blue, and alpha values for
+              the color, specified as ints from 0 to 255 or floats from 0.0
+              to 1.0.
+            - The name of the column to use for the color. Cells in this column
+              should contain colors represented in one of the formats described
+              above: hex string, named color, or color tuple.
 
             For a bar chart with multiple series, where the dataframe is in
             long format (that is, y is None or just 1 column), this should be:
@@ -682,7 +691,9 @@ class DataFrameSelectorMixin:
             This argument can only be supplied by keyword.
 
         size : str, float, or None
-            The size of the circles representing each datapoint in this chart.
+            The size of the circles representing each point. This argument can
+            only be supplied by keyword.
+
             This can be:
 
             - A number like 100, to specify a single size to use for all
@@ -691,7 +702,7 @@ class DataFrameSelectorMixin:
               datapoint to be represented by a circle of a different size.
 
         color : str, tuple, sequence of str, sequence of tuple, or None
-            The color to use for different series in this chart. This argument
+            The color of the circles representing each datapoint. This argument
             can only be supplied by keyword.
 
             For a scatterplot chart with just 1 series, this can be:
@@ -700,11 +711,14 @@ class DataFrameSelectorMixin:
             - A hex string like "#ffaa00" or "#ffaa0088".
             - A Matplotlib-compatible color name like "blue". See full list
               at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - A color tuple like (255, 255, 128) or (255, 255, 128, 0.5), where
-              the RGB components are ints in the interval [0, 255] and the alpha
-              component is a float in the interval [0.0, 1.0]. If they aren't
-              the right data types or in the right interval, this function tries
-              to guess the right thing to do.
+            - An RGB tuple with the red, green, and blue values for the color
+              specified as ints from 0 to 255 or floats from 0.0 to 1.0.
+            - An RGBA tuple with the red, green, blue, and alpha values for
+              the color, specified as ints from 0 to 255 or floats from 0.0
+              to 1.0.
+            - The name of the column to use for the color. Cells in this column
+              should contain colors represented in one of the formats described
+              above: hex string, named color, or color tuple.
 
             For a scatterplot chart with multiple series, where the dataframe
             is in long format (that is, y is None or just 1 column), this

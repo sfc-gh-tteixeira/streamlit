@@ -86,7 +86,7 @@ class MapMixin:
         color: Union[str, Color] = (200, 30, 0, 160),
         map_style: Optional[str] = None,
     ) -> "DeltaGenerator":
-        """Display a map with points on it.
+        """Display a map with a scatterpoint overlayed onto it.
 
         This is a wrapper around ``st.pydeck_chart`` to quickly create
         scatterplot charts on top of a map, with auto-centering and auto-zoom.
@@ -110,10 +110,7 @@ class MapMixin:
         data : pandas.DataFrame, pandas.Styler, pyarrow.Table, numpy.ndarray,
             pyspark.sql.DataFrame, snowflake.snowpark.dataframe.DataFrame,
             snowflake.snowpark.table.Table, Iterable, dict, or None
-            The data to be plotted. Must have two columns:
-
-            - latitude called 'lat', 'latitude', 'LAT', 'LATITUDE'
-            - longitude called 'lon', 'longitude', 'LON', 'LONGITUDE'.
+            The data to be plotted.
 
         zoom : int
             Zoom level as specified in
@@ -121,32 +118,50 @@ class MapMixin:
 
         use_container_width: bool
 
-        size : str or float
-            The size of the circles representing each point.
-            This argument can only be supplied by keyword.
+        lat : str or None
+            The name of the column containing the latitude coordinates of
+            the datapoints in the chart. This argument can only be supplied
+            by keyword.
 
-            Can be:
-            - The name of a column containing size values.
-            - A number to use for the size of all datapoints.
+            If None, the latitude data will come from any column named 'lat',
+            'latitude', 'LAT', 'LATITUDE'.
+
+        long : str or None
+            The name of the column containing the latitude coordinates of
+            the datapoints in the chart. This argument can only be supplied
+            by keyword.
+
+            If None, the latitude data will come from any column named 'lon',
+            'longitude', 'LON', 'LONGITUDE'.
+
+        size : str, float, or None
+            The size of the circles representing each point. This argument can
+            only be supplied by keyword.
+
+            This can be:
+
+            - A number like 100, to specify a single size to use for all
+              datapoints.
+            - The name of the column to use for the size. This allows each
+              datapoint to be represented by a circle of a different size.
 
         color : str or tuple
-            The color of the circles representing each point.
-            This argument can only be supplied by keyword.
+            The color of the circles representing each datapoint. This argument
+            can only be supplied by keyword.
 
             Can be:
-            - The name of a column containing the colors that should be used
-              for the corresponding datapoint. Colors **must** be in color tuple
-              format (described below), like (255, 170, 0) or (255, 170, 0, 0.5).
+            - None, to use the default color.
             - A hex string like "#ffaa00" or "#ffaa0088".
             - A Matplotlib-compatible color name like "blue". See full list
               at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - A color tuple like (255, 170, 0) or (255, 160, 0, 255), where
-              the RGB components are ints in the interval [0, 255] and the alpha
-              component is a float in the interval [0.0, 1.0]. If they aren't
-              the right data types or in the right interval, this function tries
-              to guess the right thing to do.
+            - An RGB or RGBA tuple with the red, green, blue, and alpha
+              components specified as ints from 0 to 255 or floats from 0.0 to
+              1.0.
+            - The name of the column to use for the color. Cells in this column
+              should contain colors represented in one of the formats described
+              above: hex string, named color, or color tuple.
 
-            If passing in a str, the Matplotlib library must be installed.
+            If passing in a str, the Matplotlib library must be installed. TODO XXX
 
         map_style : str or None
             One of Mapbox's map style URLs. A full list can be found here:

@@ -130,28 +130,40 @@ class ArrowAltairMixin:
             - A hex string like "#ffaa00" or "#ffaa0088".
             - A Matplotlib-compatible color name like "blue". See full list
               at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - A color tuple like (255, 255, 128) or (255, 255, 128, 0.5), where
-              the RGB components are ints in the interval [0, 255] and the alpha
-              component is a float in the interval [0.0, 1.0]. If they aren't
-              the right data types or in the right interval, this function tries
-              to guess the right thing to do.
+            - An RGB or RGBA tuple with the red, green, blue, and alpha
+              components specified as ints from 0 to 255 or floats from 0.0 to
+              1.0.
 
             For a line chart with multiple lines, where the dataframe is in
-            long format (that is, y is None or just 1 column), this should be:
+            long format (that is, y is None or just 1 column), this can be:
 
             - None, to use the default colors.
-            - The name of the column to use for the color. If the values in
-              this column look like real colors, those will be used. If they
-              do not, then a different column will be automatically selected
-              to represent each value.
+            - The name of a column in the dataset. Data points will be grouped
+              into lines of the same color based on the value of this column.
+              In addition, if the values in this column in one of the color
+              formats above (hex string, named color, or color tuple), then
+              that color will be used.
+
+              For example: if the dataset has 1000 rows, but this column can
+              only contains the values "adult", "child", "baby",
+              then those 1000 datapoints will be grouped into 3 lines, whose
+              colors will be automatically selected from the default palette.
+
+              But, if for the same 1000-row dataset, this column contained
+              the values "#ffaa00", "pink", "#0000ff", then then those 1000
+              datapoints would still be grouped into 3 lines, but their
+              colors will be "#ffaa00", "pink", "#0000ff" this time around.
 
             For a line chart with multiple lines, where the dataframe is in
-            wide format (that is, y is a sequence of columns), this should be:
+            wide format (that is, y is a sequence of columns), this can be:
 
             - None, to use the default colors.
             - A list of string colors or color tuples to be used for each of
-              the lines in the chart. For example, if the chart will have 3
-              lines can you can set ``color=["gold", "pink", "blue"]``.
+              the lines in the chart. This list should have the same length
+              as the number of y values.
+
+              For example, for a chart with have 3 lines this argument can
+              be set to ``color=["gold", "pink", "blue"]``.
 
         width : int
             The chart width in pixels. If 0, selects the width automatically.
@@ -269,34 +281,46 @@ class ArrowAltairMixin:
             The color to use for different lines in this chart. This argument
             can only be supplied by keyword.
 
-            For an area chart with just 1 line, this can be:
+            For an area chart with just 1 series, this can be:
 
             - None, to use the default color.
             - A hex string like "#ffaa00" or "#ffaa0088".
             - A Matplotlib-compatible color name like "blue". See full list
               at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - A color tuple like (255, 255, 128) or (255, 255, 128, 0.5), where
-              the RGB components are ints in the interval [0, 255] and the alpha
-              component is a float in the interval [0.0, 1.0]. If they aren't
-              the right data types or in the right interval, this function tries
-              to guess the right thing to do.
+            - An RGB or RGBA tuple with the red, green, blue, and alpha
+              components specified as ints from 0 to 255 or floats from 0.0 to
+              1.0.
 
-            For an area chart with multiple lines, where the dataframe is in
-            long format (that is, y is None or just 1 column), this should be:
+            For an area chart with multiple series, where the dataframe is in
+            long format (that is, y is None or just 1 column), this can be:
 
             - None, to use the default colors.
-            - The name of the column to use for the color. If the values in
-              this column look like real colors, those will be used. If they
-              do not, then a different column will be automatically selected
-              to represent each value.
+            - The name of a column in the dataset. Data points will be grouped
+              into series of the same color based on the value of this column.
+              In addition, if the values in this column in one of the color
+              formats above (hex string, named color, or color tuple), then
+              that color will be used.
 
-            For an area chart with multiple lines, where the dataframe is in
-            wide format (that is, y is a sequence of columns), this should be:
+              For example: if the dataset has 1000 rows, but this column can
+              only contains the values "adult", "child", "baby",
+              then those 1000 datapoints will be grouped into 3 series, whose
+              colors will be automatically selected from the default palette.
+
+              But, if for the same 1000-row dataset, this column contained
+              the values "#ffaa00", "pink", "#0000ff", then then those 1000
+              datapoints would still be grouped into 3 series, but their
+              colors will be "#ffaa00", "pink", "#0000ff" this time around.
+
+            For an area chart with multiple series, where the dataframe is in
+            wide format (that is, y is a sequence of columns), this can be:
 
             - None, to use the default colors.
             - A list of string colors or color tuples to be used for each of
-              the lines in the chart. For example, if the chart will have 3
-              lines can you can set ``color=["gold", "pink", "blue"]``.
+              the series in the chart. This list should have the same length
+              as the number of y values.
+
+              For example, for a chart with have 3 series this argument can
+              be set to ``color=["gold", "pink", "blue"]``.
 
         width : int
             The chart width in pixels. If 0, selects the width automatically.
@@ -414,34 +438,46 @@ class ArrowAltairMixin:
             The color to use for different lines in this chart. This argument
             can only be supplied by keyword.
 
-            For a bar chart with just 1 bar series, this can be:
+            For a bar chart with just 1 series, this can be:
 
             - None, to use the default color.
             - A hex string like "#ffaa00" or "#ffaa0088".
             - A Matplotlib-compatible color name like "blue". See full list
               at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - A color tuple like (255, 255, 128) or (255, 255, 128, 0.5), where
-              the RGB components are ints in the interval [0, 255] and the alpha
-              component is a float in the interval [0.0, 1.0]. If they aren't
-              the right data types or in the right interval, this function tries
-              to guess the right thing to do.
+            - An RGB or RGBA tuple with the red, green, blue, and alpha
+              components specified as ints from 0 to 255 or floats from 0.0 to
+              1.0.
 
             For a bar chart with multiple series, where the dataframe is in
-            long format (that is, y is None or just 1 column), this should be:
+            long format (that is, y is None or just 1 column), this can be:
 
             - None, to use the default colors.
-            - The name of the column to use for the color. If the values in
-              this column look like real colors, those will be used. If they
-              do not, then a different column will be automatically selected
-              to represent each value.
+            - The name of a column in the dataset. Data points will be grouped
+              into series of the same color based on the value of this column.
+              In addition, if the values in this column in one of the color
+              formats above (hex string, named color, or color tuple), then
+              that color will be used.
+
+              For example: if the dataset has 1000 rows, but this column can
+              only contains the values "adult", "child", "baby",
+              then those 1000 datapoints will be grouped into 3 series, whose
+              colors will be automatically selected from the default palette.
+
+              But, if for the same 1000-row dataset, this column contained
+              the values "#ffaa00", "pink", "#0000ff", then then those 1000
+              datapoints would still be grouped into 3 series, but their
+              colors will be "#ffaa00", "pink", "#0000ff" this time around.
 
             For a bar chart with multiple series, where the dataframe is in
-            wide format (that is, y is a sequence of columns), this should be:
+            wide format (that is, y is a sequence of columns), this can be:
 
             - None, to use the default colors.
             - A list of string colors or color tuples to be used for each of
-              the lines in the chart. For example, if the chart will have 3
-              lines can you can set ``color=["gold", "pink", "blue"]``.
+              the series in the chart. This list should have the same length
+              as the number of y values.
+
+              For example, for a chart with have 3 series this argument can
+              be set to ``color=["gold", "pink", "blue"]``.
 
         width : int
             The chart width in pixels. If 0, selects the width automatically.
@@ -562,7 +598,9 @@ class ArrowAltairMixin:
             This argument can only be supplied by keyword.
 
         size : str, float, or None
-            The size of the circles representing each datapoint in this chart.
+            The size of the circles representing each point. This argument can
+            only be supplied by keyword.
+
             This can be:
 
             - A number like 100, to specify a single size to use for all
@@ -571,39 +609,49 @@ class ArrowAltairMixin:
               datapoint to be represented by a circle of a different size.
 
         color : str, tuple, sequence of str, sequence of tuple, or None
-            The color to use for different series in this chart. This argument
+            The color of the circles representing each datapoint. This argument
             can only be supplied by keyword.
 
-            For a scatterplot chart with just 1 series, this can be:
+            This can be:
 
             - None, to use the default color.
             - A hex string like "#ffaa00" or "#ffaa0088".
             - A Matplotlib-compatible color name like "blue". See full list
               at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - A color tuple like (255, 255, 128) or (255, 255, 128, 0.5), where
-              the RGB components are ints in the interval [0, 255] and the alpha
-              component is a float in the interval [0.0, 1.0]. If they aren't
-              the right data types or in the right interval, this function tries
-              to guess the right thing to do.
+            - An RGB or RGBA tuple with the red, green, blue, and alpha
+              components specified as ints from 0 to 255 or floats from 0.0 to
+              1.0.
+            - The name of a column in the dataset where the color of that
+              datapoint will come from.
 
-            For a scatterplot chart with multiple series, where the dataframe
-            is in long format (that is, y is None or just 1 column), this
-            should be:
+              If the values in this column are in one of the color
+              formats above (hex string, named color, or color tuple), then
+              that color will be used.
 
-            - None, to use the default colors.
-            - The name of the column to use for the color. If the values in
-              this column look like real colors, those will be used. If they
-              do not, then a different column will be automatically selected
-              to represent each value.
+              Otherwise, the color will be automatically picked from the
+              default palette.
 
-            For a scatterplot chart with multiple series, where the dataframe
-            is in wide format (that is, y is a sequence of columns), this
-            should be:
+              For example: if the dataset has 1000 rows, but this column can
+              only contains the values "adult", "child", "baby", then those
+              1000 datapoints be shown using 3 colors from the default palette.
 
-            - None, to use the default colors.
+              But if this column only contains floats or ints, then those
+              1000 datapoints will be shown using a colors from a continuous
+              color gradient.
+
+              Finally, if this column only contains the values "#ffaa00",
+              "pink", "#0000ff", then then each of those 1000 datapoints will
+              be assigned "#ffaa00", "pink", or "#0000ff" as appropriate.
+
+            If the dataframe is in wide format (that is, y is a sequence of
+            columns), this can also be:
+
             - A list of string colors or color tuples to be used for each of
-              the series in the chart. For example, if the chart will have 3
-              series can you can set ``color=["gold", "pink", "blue"]``.
+              the series in the chart. This list should have the same length
+              as the number of y values.
+
+              For example, for a chart with have 3 series this argument can
+              be set to ``color=["gold", "pink", "blue"]``.
 
         width : int
             The chart width in pixels. If 0, selects the width automatically.
@@ -832,7 +880,7 @@ def _generate_chart(
         data = type_util.convert_anything_to_df(data, ensure_copy=True)
 
     x_column = _parse_x_column(data, x_from_user)
-    y_columns = _parse_y_columns(data, y_from_user)
+    y_columns = _parse_y_columns(data, y_from_user, x_column)
     color_column, color_value = _parse_column(data, color_from_user)
     size_column, size_value = _parse_column(data, size_from_user)
 
@@ -931,6 +979,7 @@ def _parse_x_column(data: pd.DataFrame, x_from_user: Optional[str]) -> Optional[
 def _parse_y_columns(
     data: pd.DataFrame,
     y_from_user: Union[str, Sequence[str], None],
+    x_column: Union[str, None],
 ) -> List[str]:
 
     y_columns: List[str] = []
@@ -955,6 +1004,10 @@ def _parse_y_columns(
             raise StreamlitAPIException(
                 f"Column {str(col)} in y parameter does not exist in the data."
             )
+
+    # y_columns should only include x_column when user explicitly asked for it.
+    if x_column in y_columns and (not y_from_user or x_column not in y_from_user):
+        y_columns.remove(x_column)
 
     return y_columns
 
@@ -1105,7 +1158,7 @@ def _get_size_enc(
         elif isinstance(size_value, (float, int)):
             return alt.SizeValue(size_value)
         elif size_value is None:
-            return None
+            return alt.SizeValue(100)
         else:
             raise StreamlitAPIException(
                 f"This does not look like a valid size: {repr(size_value)}"
@@ -1129,12 +1182,14 @@ def _get_color_enc(
     if isinstance(color_value, str):
         return alt.ColorValue(to_css_color(color_value))
 
+    # TODO XXX: Move into elif color_column?
     elif isinstance(color_value, (list, tuple)):
         return alt.Color(
-            color_column,
+            field=color_column,
             scale=alt.Scale(range=[to_css_color(c) for c in color_value]),
             legend=LEGEND_SETTINGS,
             type="nominal",
+            title=" ",
         )
 
     elif color_column is None:
