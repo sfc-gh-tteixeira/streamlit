@@ -23,6 +23,11 @@ np.random.seed(0)
 data = np.random.randn(20, 3)
 df = pd.DataFrame(data, columns=["a", "b", "c"])
 
+# Pulled ito a separate df because this doesn't make sense for certain charts.
+df2 = df.copy()
+df2["e"] = ["bird" if x % 2 else "airplane" for x in range(20)]
+df2["f"] = ["red" if x % 2 else "blue" for x in range(20)]
+
 st._arrow_area_chart(df)
 st._arrow_area_chart(df, x="a")
 st._arrow_area_chart(df, y="a")
@@ -32,3 +37,8 @@ st._arrow_area_chart(df, x="b", y="a")
 st._arrow_area_chart(df, x="a", y=["b", "c"])
 
 st._arrow_area_chart(snowpark_mocks.DataFrame())
+
+st._arrow_area_chart(df, x="a", y=["b", "c"], color=["orange", "green"])
+st._arrow_area_chart(df, x="a", y="b", color="orange")
+st._arrow_area_chart(df2, x="a", y="b", color="e")
+st._arrow_area_chart(df2, x="a", y="b", color="f")
