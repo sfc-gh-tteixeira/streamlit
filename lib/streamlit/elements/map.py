@@ -126,7 +126,7 @@ class MapMixin:
             If None, the latitude data will come from any column named 'lat',
             'latitude', 'LAT', 'LATITUDE'.
 
-        long : str or None
+        lon : str or None
             The name of the column containing the latitude coordinates of
             the datapoints in the chart. This argument can only be supplied
             by keyword.
@@ -161,7 +161,7 @@ class MapMixin:
               should contain colors represented in one of the formats described
               above: hex string, named color, or color tuple.
 
-            If passing in a str, the Matplotlib library must be installed. TODO XXX
+            If passing in a str, the Matplotlib library must be installed.
 
         map_style : str or None
             One of Mapbox's map style URLs. A full list can be found here:
