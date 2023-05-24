@@ -112,7 +112,7 @@ ARROW_DELTA_TYPES_THAT_MELT_DATAFRAMES: Final = (
     "arrow_line_chart",
     "arrow_area_chart",
     "arrow_bar_chart",
-    "arrow_scatterplot_chart",
+    "arrow_scatter_chart",
 )
 
 Value = TypeVar("Value")

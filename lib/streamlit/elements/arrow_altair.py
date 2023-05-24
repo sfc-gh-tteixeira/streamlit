@@ -266,14 +266,15 @@ class ArrowAltairMixin:
             Data to be plotted.
 
         x : str or None
-            Column name to use for the x-axis. If None, uses the data index for the x-axis.
-            This argument can only be supplied by keyword.
+            Column name to use for the x-axis. If None, uses the data index for
+            the x-axis. This argument can only be supplied by keyword.
 
         y : str, sequence of str, or None
-            Column name(s) to use for the y-axis. If a sequence of strings, draws several series
-            on the same chart by melting your wide-format table into a long-format table behind
-            the scenes. If None, draws the data of all remaining columns as data series.
-            This argument can only be supplied by keyword.
+            Column name(s) to use for the y-axis. If a sequence of strings,
+            draws several series on the same chart by melting your wide-format
+            table into a long-format table behind the scenes. If None, draws
+            the data of all remaining columns as data series. This argument can
+            only be supplied by keyword.
 
         color : str, tuple, sequence of str, sequence of tuple, or None
             The color to use for different series in this chart. This argument
@@ -421,14 +422,15 @@ class ArrowAltairMixin:
             Data to be plotted.
 
         x : str or None
-            Column name to use for the x-axis. If None, uses the data index for the x-axis.
-            This argument can only be supplied by keyword.
+            Column name to use for the x-axis. If None, uses the data index
+            for the x-axis. This argument can only be supplied by keyword.
 
         y : str, sequence of str, or None
-            Column name(s) to use for the y-axis. If a sequence of strings, draws several series
-            on the same chart by melting your wide-format table into a long-format table behind
-            the scenes. If None, draws the data of all remaining columns as data series.
-            This argument can only be supplied by keyword.
+            Column name(s) to use for the y-axis. If a sequence of strings,
+            draws several series on the same chart by melting your wide-format
+            table into a long-format table behind the scenes. If None, draws
+            the data of all remaining columns as data series. This argument
+            can only be supplied by keyword.
 
         color : str, tuple, sequence of str, sequence of tuple, or None
             The color to use for different series in this chart. This argument
@@ -549,8 +551,8 @@ class ArrowAltairMixin:
 
         return self.dg._enqueue("arrow_bar_chart", proto, chart_info=chart_info)
 
-    @gather_metrics("_arrow_scatterplot_chart")
-    def _arrow_scatterplot_chart(
+    @gather_metrics("_arrow_scatter_chart")
+    def _arrow_scatter_chart(
         self,
         data: Data = None,
         *,
@@ -569,27 +571,28 @@ class ArrowAltairMixin:
         the chart's spec. As a result this is easier to use for many "just plot
         this" scenarios, while being less customizable.
 
-        If st.scatterplot_chart does not guess the data specification
-        correctly, try specifying your desired chart using st.altair_chart.
+        If st.scatter_chart does not guess the data specification correctly,
+        try specifying your desired chart using st.altair_chart.
 
         Parameters
         ----------
         data : pandas.DataFrame, pandas.Styler, pyarrow.Table, numpy.ndarray, pyspark.sql.DataFrame, snowflake.snowpark.dataframe.DataFrame, snowflake.snowpark.table.Table, Iterable, dict or None
             Data to be plotted.
-            Pyarrow tables are not supported by Streamlit's legacy DataFrame serialization
-            (i.e. with `config.dataFrameSerialization = "legacy"`).
-            To use pyarrow tables, please enable pyarrow by changing the config setting,
-            `config.dataFrameSerialization = "arrow"`.
+            Pyarrow tables are not supported by Streamlit's legacy DataFrame
+            serialization (i.e. with `config.dataFrameSerialization = "legacy"`).
+            To use pyarrow tables, please enable pyarrow by changing the config
+            setting, `config.dataFrameSerialization = "arrow"`.
 
         x : str or None
-            Column name to use for the x-axis. If None, uses the data index for the x-axis.
-            This argument can only be supplied by keyword.
+            Column name to use for the x-axis. If None, uses the data index for
+            the x-axis. This argument can only be supplied by keyword.
 
         y : str, sequence of str, or None
-            Column name(s) to use for the y-axis. If a sequence of strings, draws several series
-            on the same chart by melting your wide-format table into a long-format table behind
-            the scenes. If None, draws the data of all remaining columns as data series.
-            This argument can only be supplied by keyword.
+            Column name(s) to use for the y-axis. If a sequence of strings,
+            draws several series on the same chart by melting your wide-format
+            table into a long-format table behind the scenes. If None, draws
+            the data of all remaining columns as data series. This argument can
+            only be supplied by keyword.
 
         size : str, float, or None
             The size of the circles representing each point. This argument can
@@ -667,7 +670,7 @@ class ArrowAltairMixin:
         ...     np.random.randn(20, 3),
         ...     columns=['a', 'b', 'c'])
         ...
-        >>> st._arrow_scatterplot_chart(chart_data)
+        >>> st._arrow_scatter_chart(chart_data)
 
         You can also choose different columns to use for x and y, as well as set
         the color dynamically based on a 3rd column (assuming your dataframe is in
@@ -677,7 +680,7 @@ class ArrowAltairMixin:
         ...     np.random.randn(20, 4),
         ...     columns=['col1', 'col2', 'col3', 'col4'])
         ...
-        >>> st._arrow_scatterplot_chart(
+        >>> st._arrow_scatter_chart(
         ...     chart_data,
         ...     x='col1',
         ...     y='col2',
@@ -689,7 +692,7 @@ class ArrowAltairMixin:
         columns under the y argument to show multiple series with different
         colors:
 
-        >>> st._arrow_scatterplot_chart(
+        >>> st._arrow_scatter_chart(
         ...     chart_data,
         ...     x='col1',
         ...     y=['col2', 'col3'],
@@ -711,7 +714,7 @@ class ArrowAltairMixin:
         )
         marshall(proto, chart, use_container_width, theme="streamlit")
 
-        return self.dg._enqueue("arrow_scatterplot_chart", proto, chart_info=chart_info)
+        return self.dg._enqueue("arrow_scatter_chart", proto, chart_info=chart_info)
 
     @gather_metrics("_arrow_altair_chart")
     def _arrow_altair_chart(

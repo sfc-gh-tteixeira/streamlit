@@ -38,7 +38,7 @@ df2["f"] = ["#f00" if x % 2 else "#00f" for x in range(20)]
 
 There should be 4 series. x should be in [0, 20] and there should be a decreasing line.
 """
-st._arrow_scatterplot_chart(df)
+st._arrow_scatter_chart(df)
 
 """
 ### Wide dataframe with explicit x and implicit y
@@ -46,65 +46,65 @@ st._arrow_scatterplot_chart(df)
 There should be 3 series. x should be in [-20, 0] and there should be no increasing or decreasing
 line.
 """
-st._arrow_scatterplot_chart(df, x="a")
+st._arrow_scatter_chart(df, x="a")
 
 """
 ### Wide dataframe with implicit x and explicit y
 
 There should be 1 series. x should be in [0, 20] and there should be a decreasing line.
 """
-st._arrow_scatterplot_chart(df, y="a")
+st._arrow_scatter_chart(df, y="a")
 
 """### Wide dataframe with explicit x, y
 
 There should be 1 series. x should be in [-20, 0] and there should be no increasing or decreasing
 line.
 """
-st._arrow_scatterplot_chart(df, x="a", y="b")
+st._arrow_scatter_chart(df, x="a", y="b")
 
 """
 There should be 1 series. x should be in [0, 10] and there should be no increasing or decreasing
 line.
 """
-st._arrow_scatterplot_chart(df, x="b", y="a")
+st._arrow_scatter_chart(df, x="b", y="a")
 
 """
 ### Wide dataframe with implicity x and explicit y list
 
 There should be 2 series. x should be in [0, 20] and there should be a decreasing line.
 """
-st._arrow_scatterplot_chart(df, y=["a", "b"])
+st._arrow_scatter_chart(df, y=["a", "b"])
 
 """
 ### Size is set to a value
 
 There should be 1 series. Circles should be bigger.
 """
-st._arrow_scatterplot_chart(df, x="a", y="b", size=500)
+st._arrow_scatter_chart(df, x="a", y="b", size=500)
 
 """
 There should be 2 series. Circles should be bigger.
 """
-st._arrow_scatterplot_chart(df, x="a", y=["b", "c"], size=500)
+st._arrow_scatter_chart(df, x="a", y=["b", "c"], size=500)
 
 """
 ### Size is set to a column
 
 There should be 1 series. Circles should vary in size.
 """
-st._arrow_scatterplot_chart(df, x="a", y="b", size="c")
+st._arrow_scatter_chart(df, x="a", y="b", size="c")
 
 """
 There should be 2 series. Circles for same x value should have the same size.
 """
-st._arrow_scatterplot_chart(df, x="a", y=["b", "c"], size="d")
+st._arrow_scatter_chart(df, x="a", y=["b", "c"], size="d")
 
 """
 ### All component arguments are set
 
 There should be 1 series. Circles should vary in color and size. Color scale should be contiguous.
 """
-st._arrow_scatterplot_chart(df, x="a", y="b", color="c", size="d")
+st._arrow_scatter_chart(df, x="a", y="b", color="c", size="d")
 
 """
 ### Some of the long component are the same
@@ -112,38 +112,38 @@ st._arrow_scatterplot_chart(df, x="a", y="b", color="c", size="d")
 There should be 1 series. Circles should vary in color and size, but color and size components are
 the same.
 """
-st._arrow_scatterplot_chart(df, x="a", y="b", size="c", color="c")
+st._arrow_scatter_chart(df, x="a", y="b", size="c", color="c")
 
 """
 ### Some long component is the same as a some wide component
 
 Should show 2 series, where 1 is an x=y line from -20 to 0.
 """
-st._arrow_scatterplot_chart(df, x="a", y=["a", "c"])
+st._arrow_scatter_chart(df, x="a", y=["a", "c"])
 
 """
 Should show 2 series, where the size of the 2nd series is smaller at the
 bottom than on top.
 """
-st._arrow_scatterplot_chart(df, x="a", y=["b", "c"], size="c")
+st._arrow_scatter_chart(df, x="a", y=["b", "c"], size="c")
 
 """
 Should show 2 series. (The color=c argument is ignored because it doesn't
 make sense).
 """
-st._arrow_scatterplot_chart(df, x="a", y=["b", "c"], color="c")
+st._arrow_scatter_chart(df, x="a", y=["b", "c"], color="c")
 
 """
 ### Passing a color sequence
 
 Should show 2 series (in orange and green) with circles of varying sizes.
 """
-st._arrow_scatterplot_chart(df, x="a", y=["b", "c"], color=["#e60", "#4f2"], size="d")
+st._arrow_scatter_chart(df, x="a", y=["b", "c"], color=["#e60", "#4f2"], size="d")
 
 """
 Should show 1 series (in #e60) with circles of varying sizes.
 """
-st._arrow_scatterplot_chart(df, x="a", y="b", color="#e60", size="d")
+st._arrow_scatter_chart(df, x="a", y="b", color="#e60", size="d")
 
 """
 ### Columns with nominal colors
@@ -151,7 +151,7 @@ st._arrow_scatterplot_chart(df, x="a", y="b", color="#e60", size="d")
 Should show two 2 using the default colors, with circles of varying
 sizes.
 """
-st._arrow_scatterplot_chart(df2, x="a", y="b", color="e", size="d")
+st._arrow_scatter_chart(df2, x="a", y="b", color="e", size="d")
 
 """
 ### Columns with color values
@@ -159,4 +159,4 @@ st._arrow_scatterplot_chart(df2, x="a", y="b", color="e", size="d")
 Should show 2 series (red and blue), with circles of varying sizes and no
 color legend.
 """
-st._arrow_scatterplot_chart(df2, x="a", y="b", color="f", size="d")
+st._arrow_scatter_chart(df2, x="a", y="b", color="f", size="d")

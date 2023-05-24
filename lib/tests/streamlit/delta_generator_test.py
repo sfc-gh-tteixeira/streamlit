@@ -133,7 +133,7 @@ class RunWarningTest(unittest.TestCase):
                 "pydeck_chart",
                 "pyplot",
                 "radio",
-                "scatterplot_chart",
+                "scatter_chart",
                 "select_slider",
                 "selectbox",
                 "slider",

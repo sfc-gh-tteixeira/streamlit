@@ -32,7 +32,7 @@ class DeltaGeneratorAddRowsTest(DeltaGeneratorTestCase):
             lambda df: st._arrow_line_chart(df),
             lambda df: st._arrow_bar_chart(df),
             lambda df: st._arrow_area_chart(df),
-            lambda df: st._arrow_scatterplot_chart(df),
+            lambda df: st._arrow_scatter_chart(df),
         ]
 
         expected = pd.DataFrame(
@@ -65,7 +65,7 @@ class DeltaGeneratorAddRowsTest(DeltaGeneratorTestCase):
             lambda df: st._arrow_area_chart(
                 df, x="b", y=["a", "c"], color=["red", "orange"]
             ),
-            lambda df: st._arrow_scatterplot_chart(
+            lambda df: st._arrow_scatter_chart(
                 df, x="b", y=["a", "c"], color=["red", "orange"], size="b"
             ),
         ]
@@ -94,7 +94,7 @@ class DeltaGeneratorAddRowsTest(DeltaGeneratorTestCase):
             lambda df: st._arrow_line_chart(df, x="b", y="a"),
             lambda df: st._arrow_bar_chart(df, x="b", y="a"),
             lambda df: st._arrow_area_chart(df, x="b", y="a"),
-            lambda df: st._arrow_scatterplot_chart(df, x="b", y="a", size="b"),
+            lambda df: st._arrow_scatter_chart(df, x="b", y="a", size="b"),
         ]
 
         expected = pd.DataFrame(
@@ -119,7 +119,7 @@ class DeltaGeneratorAddRowsTest(DeltaGeneratorTestCase):
         # Here "c" is used in both the a long-format property (i.e. size) and a wide-format
         # property (y). This means it needs to appear twice in the final dataframe.
         deltas = [
-            lambda df: st._arrow_scatterplot_chart(df, x="b", y=["a", "c"], size="c"),
+            lambda df: st._arrow_scatter_chart(df, x="b", y=["a", "c"], size="c"),
         ]
 
         expected = pd.DataFrame(

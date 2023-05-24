@@ -719,8 +719,8 @@ class DataFrameSelectorMixin:
                 use_container_width=use_container_width,
             )
 
-    @gather_metrics("scatterplot_chart")
-    def scatterplot_chart(
+    @gather_metrics("scatter_chart")
+    def scatter_chart(
         self,
         data: "Data" = None,
         *,
@@ -739,8 +739,8 @@ class DataFrameSelectorMixin:
         the chart's spec. As a result this is easier to use for many "just plot
         this" scenarios, while being less customizable.
 
-        If st.scatterplot_chart does not guess the data specification
-        correctly, try specifying your desired chart using st.altair_chart.
+        If st.scatter_chart does not guess the data specification correctly,
+        try specifying your desired chart using st.altair_chart.
 
         Parameters
         ----------
@@ -837,7 +837,7 @@ class DataFrameSelectorMixin:
         ...     np.random.randn(20, 3),
         ...     columns=['a', 'b', 'c'])
         ...
-        >>> st.scatterplot_chart(chart_data)
+        >>> st.scatter_chart(chart_data)
 
         You can also choose different columns to use for x and y, as well as set
         the color dynamically based on a 3rd column (assuming your dataframe is in
@@ -847,7 +847,7 @@ class DataFrameSelectorMixin:
         ...     np.random.randn(20, 4),
         ...     columns=['col1', 'col2', 'col3', 'col4'])
         ...
-        >>> st.scatterplot_chart(
+        >>> st.scatter_chart(
         ...     chart_data,
         ...     x='col1',
         ...     y='col2',
@@ -859,7 +859,7 @@ class DataFrameSelectorMixin:
         columns under the y argument to show multiple series with different
         colors:
 
-        >>> st.scatterplot_chart(
+        >>> st.scatter_chart(
         ...     chart_data,
         ...     x='col1',
         ...     y=['col2', 'col3'],
@@ -869,7 +869,7 @@ class DataFrameSelectorMixin:
 
         """
         if _use_arrow():
-            return self.dg._arrow_scatterplot_chart(
+            return self.dg._arrow_scatter_chart(
                 data,
                 x=x,
                 y=y,

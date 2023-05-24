@@ -218,22 +218,22 @@ class DataFrameSelectorTest(unittest.TestCase):
             use_container_width=True,
         )
 
-    @patch.object(DeltaGenerator, "_arrow_scatterplot_chart")
+    @patch.object(DeltaGenerator, "_arrow_scatter_chart")
     @patch_config_options({"global.dataFrameSerialization": "legacy"})
-    def test_legacy_scatterplot_chart(self, arrow_scatterplot_chart):
+    def test_legacy_scatter_chart(self, arrow_scatter_chart):
         with self.assertRaises(StreamlitAPIException):
-            streamlit.scatterplot_chart(
+            streamlit.scatter_chart(
                 DATAFRAME, width=100, height=200, use_container_width=True
             )
-        arrow_scatterplot_chart.assert_not_called()
+        arrow_scatter_chart.assert_not_called()
 
-    @patch.object(DeltaGenerator, "_arrow_scatterplot_chart")
+    @patch.object(DeltaGenerator, "_arrow_scatter_chart")
     @patch_config_options({"global.dataFrameSerialization": "arrow"})
-    def test_arrow_scatterplot_chart(self, arrow_scatterplot_chart):
-        streamlit.scatterplot_chart(
+    def test_arrow_scatter_chart(self, arrow_scatter_chart):
+        streamlit.scatter_chart(
             DATAFRAME, width=100, height=200, use_container_width=True
         )
-        arrow_scatterplot_chart.assert_called_once_with(
+        arrow_scatter_chart.assert_called_once_with(
             DATAFRAME,
             x=None,
             y=None,
