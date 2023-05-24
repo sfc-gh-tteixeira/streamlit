@@ -38,7 +38,7 @@ st._arrow_area_chart(df, x="a", y=["b", "c"])
 
 st._arrow_area_chart(snowpark_mocks.DataFrame())
 
-st._arrow_area_chart(df, x="a", y=["b", "c"], color=["orange", "green"])
-st._arrow_area_chart(df, x="a", y="b", color="orange")
+st._arrow_area_chart(df, x="a", y=["b", "c"], color=["#e60", "#4f2"])
+st._arrow_area_chart(df, x="a", y="b", color="#e60")
 st._arrow_area_chart(df2, x="a", y="b", color="e")
 st._arrow_area_chart(df2, x="a", y="b", color="f")

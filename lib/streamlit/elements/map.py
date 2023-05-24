@@ -23,7 +23,7 @@ from typing_extensions import Final, TypeAlias
 
 import streamlit.elements.deck_gl_json_chart as deck_gl_json_chart
 from streamlit import config, type_util
-from streamlit.color_util import Color, is_color, to_int_color_tuple
+from streamlit.color_util import Color, is_color_like, to_int_color_tuple
 from streamlit.errors import StreamlitAPIException
 from streamlit.proto.DeckGlJsonChart_pb2 import DeckGlJsonChart as DeckGlJsonChartProto
 from streamlit.runtime.metrics_util import gather_metrics
@@ -124,7 +124,7 @@ class MapMixin:
             by keyword.
 
             If None, the latitude data will come from any column named 'lat',
-            'latitude', 'LAT', 'LATITUDE'.
+            'latitude', 'LAT', or 'LATITUDE'.
 
         lon : str or None
             The name of the column containing the latitude coordinates of
@@ -132,7 +132,7 @@ class MapMixin:
             by keyword.
 
             If None, the latitude data will come from any column named 'lon',
-            'longitude', 'LON', 'LONGITUDE'.
+            'longitude', 'LON', or 'LONGITUDE'.
 
         size : str, float, or None
             The size of the circles representing each point. This argument can
@@ -152,14 +152,12 @@ class MapMixin:
             Can be:
             - None, to use the default color.
             - A hex string like "#ffaa00" or "#ffaa0088".
-            - A Matplotlib-compatible color name like "blue". See full list
-              at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
             - An RGB or RGBA tuple with the red, green, blue, and alpha
               components specified as ints from 0 to 255 or floats from 0.0 to
               1.0.
             - The name of the column to use for the color. Cells in this column
-              should contain colors represented in one of the formats described
-              above: hex string, named color, or color tuple.
+              should contain colors represented as a hex string or color tuple,
+              as described above.
 
             If passing in a str, the Matplotlib library must be installed.
 
@@ -344,8 +342,8 @@ def _get_size_arg_and_col_name(
     col_name = None
 
     if size in data.columns:
-        size = f"@@={size}"
         col_name = size
+        size = f"@@={size}"
 
     return size, col_name
 
@@ -362,7 +360,7 @@ def _get_color_arg_and_calc_color_col(
         color_arg = f"@@={color}"
         new_data = data
 
-        if len(data[color]) > 0 and is_color(data[color][0]):
+        if len(data[color]) > 0 and is_color_like(data[color][0]):
             parsed_color = data[color].apply(to_int_color_tuple)
 
             # Clone data to avoid transforming the original dataframe.

@@ -281,33 +281,40 @@ class DataFrameSelectorMixin:
 
             - None, to use the default color.
             - A hex string like "#ffaa00" or "#ffaa0088".
-            - A Matplotlib-compatible color name like "blue". See full list
-              at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - An RGB tuple with the red, green, and blue values for the color
-              specified as ints from 0 to 255 or floats from 0.0 to 1.0.
-            - An RGBA tuple with the red, green, blue, and alpha values for
-              the color, specified as ints from 0 to 255 or floats from 0.0
-              to 1.0.
-            - The name of the column to use for the color. Cells in this column
-              should contain colors represented in one of the formats described
-              above: hex string, named color, or color tuple.
+            - An RGB or RGBA tuple with the red, green, #04f, and alpha
+              components specified as ints from 0 to 255 or floats from 0.0 to
+              1.0.
 
             For a line chart with multiple lines, where the dataframe is in
-            long format (that is, y is None or just 1 column), this should be:
+            long format (that is, y is None or just 1 column), this can be:
 
             - None, to use the default colors.
-            - The name of the column to use for the color. If the values in
-              this column look like real colors, those will be used. If they
-              do not, then a different column will be automatically selected
-              to represent each value.
+            - The name of a column in the dataset. Data points will be grouped
+              into lines of the same color based on the value of this column.
+              In addition, if the values in this column in one of the color
+              formats above (hex string or color tuple), then that color will
+              be used.
+
+              For example: if the dataset has 1000 rows, but this column can
+              only contains the values "adult", "child", "baby",
+              then those 1000 datapoints will be grouped into 3 lines, whose
+              colors will be automatically selected from the default palette.
+
+              But, if for the same 1000-row dataset, this column contained
+              the values "#ffaa00", "#f0f", "#0000ff", then then those 1000
+              datapoints would still be grouped into 3 lines, but their
+              colors would be "#ffaa00", "#f0f", "#0000ff" this time around.
 
             For a line chart with multiple lines, where the dataframe is in
-            wide format (that is, y is a sequence of columns), this should be:
+            wide format (that is, y is a sequence of columns), this can be:
 
             - None, to use the default colors.
             - A list of string colors or color tuples to be used for each of
-              the lines in the chart. For example, if the chart will have 3
-              lines can you can set ``color=["gold", "pink", "blue"]``.
+              the lines in the chart. This list should have the same length
+              as the number of y values.
+
+              For example, for a chart with have 3 lines this argument can
+              be set to ``color=["#fd0", "#f0f", "#04f"]``.
 
         width : int
             The chart width in pixels. If 0, selects the width automatically.
@@ -429,40 +436,47 @@ class DataFrameSelectorMixin:
             This argument can only be supplied by keyword.
 
         color : str, tuple, sequence of str, sequence of tuple, or None
-            The color to use for different lines in this chart. This argument
+            The color to use for different series in this chart. This argument
             can only be supplied by keyword.
 
-            For an area chart with just 1 line, this can be:
+            For an area chart with just 1 series, this can be:
 
             - None, to use the default color.
             - A hex string like "#ffaa00" or "#ffaa0088".
-            - A Matplotlib-compatible color name like "blue". See full list
-              at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - An RGB tuple with the red, green, and blue values for the color
-              specified as ints from 0 to 255 or floats from 0.0 to 1.0.
-            - An RGBA tuple with the red, green, blue, and alpha values for
-              the color, specified as ints from 0 to 255 or floats from 0.0
-              to 1.0.
-            - The name of the column to use for the color. Cells in this column
-              should contain colors represented in one of the formats described
-              above: hex string, named color, or color tuple.
+            - An RGB or RGBA tuple with the red, green, #04f, and alpha
+              components specified as ints from 0 to 255 or floats from 0.0 to
+              1.0.
 
-            For an area chart with multiple lines, where the dataframe is in
-            long format (that is, y is None or just 1 column), this should be:
+            For an area chart with multiple series, where the dataframe is in
+            long format (that is, y is None or just 1 column), this can be:
 
             - None, to use the default colors.
-            - The name of the column to use for the color. If the values in
-              this column look like real colors, those will be used. If they
-              do not, then a different column will be automatically selected
-              to represent each value.
+            - The name of a column in the dataset. Data points will be grouped
+              into series of the same color based on the value of this column.
+              In addition, if the values in this column in one of the color
+              formats above (hex string or color tuple), then that color will
+              be used.
 
-            For an area chart with multiple lines, where the dataframe is in
-            wide format (that is, y is a sequence of columns), this should be:
+              For example: if the dataset has 1000 rows, but this column can
+              only contains the values "adult", "child", "baby",
+              then those 1000 datapoints will be grouped into 3 series, whose
+              colors will be automatically selected from the default palette.
+
+              But, if for the same 1000-row dataset, this column contained
+              the values "#ffaa00", "#f0f", "#0000ff", then then those 1000
+              datapoints would still be grouped into 3 series, but their
+              colors would be "#ffaa00", "#f0f", "#0000ff" this time around.
+
+            For an area chart with multiple series, where the dataframe is in
+            wide format (that is, y is a sequence of columns), this can be:
 
             - None, to use the default colors.
             - A list of string colors or color tuples to be used for each of
-              the lines in the chart. For example, if the chart will have 3
-              lines can you can set ``color=["gold", "pink", "blue"]``.
+              the series in the chart. This list should have the same length
+              as the number of y values.
+
+              For example, for a chart with have 3 series this argument can
+              be set to ``color=["#fd0", "#f0f", "#04f"]``.
 
         width : int
             The chart width in pixels. If 0, selects the width automatically.
@@ -587,37 +601,44 @@ class DataFrameSelectorMixin:
             The color to use for different series in this chart. This argument
             can only be supplied by keyword.
 
-            For a bar chart with just 1 bar series, this can be:
+            For a bar chart with just 1 series, this can be:
 
             - None, to use the default color.
             - A hex string like "#ffaa00" or "#ffaa0088".
-            - A Matplotlib-compatible color name like "blue". See full list
-              at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - An RGB tuple with the red, green, and blue values for the color
-              specified as ints from 0 to 255 or floats from 0.0 to 1.0.
-            - An RGBA tuple with the red, green, blue, and alpha values for
-              the color, specified as ints from 0 to 255 or floats from 0.0
-              to 1.0.
-            - The name of the column to use for the color. Cells in this column
-              should contain colors represented in one of the formats described
-              above: hex string, named color, or color tuple.
+            - An RGB or RGBA tuple with the red, green, #04f, and alpha
+              components specified as ints from 0 to 255 or floats from 0.0 to
+              1.0.
 
             For a bar chart with multiple series, where the dataframe is in
-            long format (that is, y is None or just 1 column), this should be:
+            long format (that is, y is None or just 1 column), this can be:
 
             - None, to use the default colors.
-            - The name of the column to use for the color. If the values in
-              this column look like real colors, those will be used. If they
-              do not, then a different column will be automatically selected
-              to represent each value.
+            - The name of a column in the dataset. Data points will be grouped
+              into series of the same color based on the value of this column.
+              In addition, if the values in this column in one of the color
+              formats above (hex string or color tuple), then that color will
+              be used.
+
+              For example: if the dataset has 1000 rows, but this column can
+              only contains the values "adult", "child", "baby",
+              then those 1000 datapoints will be grouped into 3 series, whose
+              colors will be automatically selected from the default palette.
+
+              But, if for the same 1000-row dataset, this column contained
+              the values "#ffaa00", "#f0f", "#0000ff", then then those 1000
+              datapoints would still be grouped into 3 series, but their
+              colors would be "#ffaa00", "#f0f", "#0000ff" this time around.
 
             For a bar chart with multiple series, where the dataframe is in
-            wide format (that is, y is a sequence of columns), this should be:
+            wide format (that is, y is a sequence of columns), this can be:
 
             - None, to use the default colors.
             - A list of string colors or color tuples to be used for each of
-              the series in the chart. For example, if the chart will have 3
-              series can you can set ``color=["gold", "pink", "blue"]``.
+              the series in the chart. This list should have the same length
+              as the number of y values.
+
+              For example, for a chart with have 3 series this argument can
+              be set to ``color=["#fd0", "#f0f", "#04f"]``.
 
         width : int
             The chart width in pixels. If 0, selects the width automatically.
@@ -755,39 +776,43 @@ class DataFrameSelectorMixin:
             The color of the circles representing each datapoint. This argument
             can only be supplied by keyword.
 
-            For a scatterplot chart with just 1 series, this can be:
+            This can be:
 
             - None, to use the default color.
             - A hex string like "#ffaa00" or "#ffaa0088".
-            - A Matplotlib-compatible color name like "blue". See full list
-              at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - An RGB tuple with the red, green, and blue values for the color
-              specified as ints from 0 to 255 or floats from 0.0 to 1.0.
-            - An RGBA tuple with the red, green, blue, and alpha values for
-              the color, specified as ints from 0 to 255 or floats from 0.0
-              to 1.0.
-            - The name of the column to use for the color. Cells in this column
-              should contain colors represented in one of the formats described
-              above: hex string, named color, or color tuple.
+            - An RGB or RGBA tuple with the red, green, #04f, and alpha
+              components specified as ints from 0 to 255 or floats from 0.0 to
+              1.0.
+            - The name of a column in the dataset where the color of that
+              datapoint will come from.
 
-            For a scatterplot chart with multiple series, where the dataframe
-            is in long format (that is, y is None or just 1 column), this
-            should be:
+              If the values in this column are in one of the color formats
+              above (hex string or color tuple), then that color will be used.
 
-            - None, to use the default colors.
-            - The name of the column to use for the color. If the values in
-              this column look like real colors, those will be used. If they
-              do not, then a different column will be automatically selected
-              to represent each value.
+              Otherwise, the color will be automatically picked from the
+              default palette.
 
-            For a scatterplot chart with multiple series, where the dataframe
-            is in wide format (that is, y is a sequence of columns), this
-            should be:
+              For example: if the dataset has 1000 rows, but this column can
+              only contains the values "adult", "child", "baby", then those
+              1000 datapoints be shown using 3 colors from the default palette.
 
-            - None, to use the default colors.
+              But if this column only contains floats or ints, then those
+              1000 datapoints will be shown using a colors from a continuous
+              color gradient.
+
+              Finally, if this column only contains the values "#ffaa00",
+              "#f0f", "#0000ff", then then each of those 1000 datapoints will
+              be assigned "#ffaa00", "#f0f", or "#0000ff" as appropriate.
+
+            If the dataframe is in wide format (that is, y is a sequence of
+            columns), this can also be:
+
             - A list of string colors or color tuples to be used for each of
-              the series in the chart. For example, if the chart will have 3
-              series can you can set ``color=["gold", "pink", "blue"]``.
+              the series in the chart. This list should have the same length
+              as the number of y values.
+
+              For example, for a chart with have 3 series this argument can
+              be set to ``color=["#fd0", "#f0f", "#04f"]``.
 
         width : int
             The chart width in pixels. If 0, selects the width automatically.

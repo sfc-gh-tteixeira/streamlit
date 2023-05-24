@@ -39,7 +39,7 @@ from typing_extensions import Literal
 
 import streamlit.elements.arrow_vega_lite as arrow_vega_lite
 from streamlit import type_util
-from streamlit.color_util import Color, is_color_str, to_css_color
+from streamlit.color_util import Color, is_color_str_like, to_css_color
 from streamlit.elements.altair_utils import ChartInfo
 from streamlit.elements.arrow import Data
 from streamlit.elements.utils import last_index_for_melted_dataframes
@@ -128,9 +128,7 @@ class ArrowAltairMixin:
 
             - None, to use the default color.
             - A hex string like "#ffaa00" or "#ffaa0088".
-            - A Matplotlib-compatible color name like "blue". See full list
-              at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - An RGB or RGBA tuple with the red, green, blue, and alpha
+            - An RGB or RGBA tuple with the red, green, #04f, and alpha
               components specified as ints from 0 to 255 or floats from 0.0 to
               1.0.
 
@@ -141,8 +139,8 @@ class ArrowAltairMixin:
             - The name of a column in the dataset. Data points will be grouped
               into lines of the same color based on the value of this column.
               In addition, if the values in this column in one of the color
-              formats above (hex string, named color, or color tuple), then
-              that color will be used.
+              formats above (hex string or color tuple), then that color will
+              be used.
 
               For example: if the dataset has 1000 rows, but this column can
               only contains the values "adult", "child", "baby",
@@ -150,9 +148,9 @@ class ArrowAltairMixin:
               colors will be automatically selected from the default palette.
 
               But, if for the same 1000-row dataset, this column contained
-              the values "#ffaa00", "pink", "#0000ff", then then those 1000
+              the values "#ffaa00", "#f0f", "#0000ff", then then those 1000
               datapoints would still be grouped into 3 lines, but their
-              colors will be "#ffaa00", "pink", "#0000ff" this time around.
+              colors would be "#ffaa00", "#f0f", "#0000ff" this time around.
 
             For a line chart with multiple lines, where the dataframe is in
             wide format (that is, y is a sequence of columns), this can be:
@@ -163,7 +161,7 @@ class ArrowAltairMixin:
               as the number of y values.
 
               For example, for a chart with have 3 lines this argument can
-              be set to ``color=["gold", "pink", "blue"]``.
+              be set to ``color=["#fd0", "#f0f", "#04f"]``.
 
         width : int
             The chart width in pixels. If 0, selects the width automatically.
@@ -278,16 +276,14 @@ class ArrowAltairMixin:
             This argument can only be supplied by keyword.
 
         color : str, tuple, sequence of str, sequence of tuple, or None
-            The color to use for different lines in this chart. This argument
+            The color to use for different series in this chart. This argument
             can only be supplied by keyword.
 
             For an area chart with just 1 series, this can be:
 
             - None, to use the default color.
             - A hex string like "#ffaa00" or "#ffaa0088".
-            - A Matplotlib-compatible color name like "blue". See full list
-              at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - An RGB or RGBA tuple with the red, green, blue, and alpha
+            - An RGB or RGBA tuple with the red, green, #04f, and alpha
               components specified as ints from 0 to 255 or floats from 0.0 to
               1.0.
 
@@ -298,8 +294,8 @@ class ArrowAltairMixin:
             - The name of a column in the dataset. Data points will be grouped
               into series of the same color based on the value of this column.
               In addition, if the values in this column in one of the color
-              formats above (hex string, named color, or color tuple), then
-              that color will be used.
+              formats above (hex string or color tuple), then that color will
+              be used.
 
               For example: if the dataset has 1000 rows, but this column can
               only contains the values "adult", "child", "baby",
@@ -307,9 +303,9 @@ class ArrowAltairMixin:
               colors will be automatically selected from the default palette.
 
               But, if for the same 1000-row dataset, this column contained
-              the values "#ffaa00", "pink", "#0000ff", then then those 1000
+              the values "#ffaa00", "#f0f", "#0000ff", then then those 1000
               datapoints would still be grouped into 3 series, but their
-              colors will be "#ffaa00", "pink", "#0000ff" this time around.
+              colors would be "#ffaa00", "#f0f", "#0000ff" this time around.
 
             For an area chart with multiple series, where the dataframe is in
             wide format (that is, y is a sequence of columns), this can be:
@@ -320,7 +316,7 @@ class ArrowAltairMixin:
               as the number of y values.
 
               For example, for a chart with have 3 series this argument can
-              be set to ``color=["gold", "pink", "blue"]``.
+              be set to ``color=["#fd0", "#f0f", "#04f"]``.
 
         width : int
             The chart width in pixels. If 0, selects the width automatically.
@@ -435,16 +431,14 @@ class ArrowAltairMixin:
             This argument can only be supplied by keyword.
 
         color : str, tuple, sequence of str, sequence of tuple, or None
-            The color to use for different lines in this chart. This argument
+            The color to use for different series in this chart. This argument
             can only be supplied by keyword.
 
             For a bar chart with just 1 series, this can be:
 
             - None, to use the default color.
             - A hex string like "#ffaa00" or "#ffaa0088".
-            - A Matplotlib-compatible color name like "blue". See full list
-              at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - An RGB or RGBA tuple with the red, green, blue, and alpha
+            - An RGB or RGBA tuple with the red, green, #04f, and alpha
               components specified as ints from 0 to 255 or floats from 0.0 to
               1.0.
 
@@ -455,8 +449,8 @@ class ArrowAltairMixin:
             - The name of a column in the dataset. Data points will be grouped
               into series of the same color based on the value of this column.
               In addition, if the values in this column in one of the color
-              formats above (hex string, named color, or color tuple), then
-              that color will be used.
+              formats above (hex string or color tuple), then that color will
+              be used.
 
               For example: if the dataset has 1000 rows, but this column can
               only contains the values "adult", "child", "baby",
@@ -464,9 +458,9 @@ class ArrowAltairMixin:
               colors will be automatically selected from the default palette.
 
               But, if for the same 1000-row dataset, this column contained
-              the values "#ffaa00", "pink", "#0000ff", then then those 1000
+              the values "#ffaa00", "#f0f", "#0000ff", then then those 1000
               datapoints would still be grouped into 3 series, but their
-              colors will be "#ffaa00", "pink", "#0000ff" this time around.
+              colors would be "#ffaa00", "#f0f", "#0000ff" this time around.
 
             For a bar chart with multiple series, where the dataframe is in
             wide format (that is, y is a sequence of columns), this can be:
@@ -477,7 +471,7 @@ class ArrowAltairMixin:
               as the number of y values.
 
               For example, for a chart with have 3 series this argument can
-              be set to ``color=["gold", "pink", "blue"]``.
+              be set to ``color=["#fd0", "#f0f", "#04f"]``.
 
         width : int
             The chart width in pixels. If 0, selects the width automatically.
@@ -616,17 +610,14 @@ class ArrowAltairMixin:
 
             - None, to use the default color.
             - A hex string like "#ffaa00" or "#ffaa0088".
-            - A Matplotlib-compatible color name like "blue". See full list
-              at https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors.
-            - An RGB or RGBA tuple with the red, green, blue, and alpha
+            - An RGB or RGBA tuple with the red, green, #04f, and alpha
               components specified as ints from 0 to 255 or floats from 0.0 to
               1.0.
             - The name of a column in the dataset where the color of that
               datapoint will come from.
 
-              If the values in this column are in one of the color
-              formats above (hex string, named color, or color tuple), then
-              that color will be used.
+              If the values in this column are in one of the color formats
+              above (hex string or color tuple), then that color will be used.
 
               Otherwise, the color will be automatically picked from the
               default palette.
@@ -640,8 +631,8 @@ class ArrowAltairMixin:
               color gradient.
 
               Finally, if this column only contains the values "#ffaa00",
-              "pink", "#0000ff", then then each of those 1000 datapoints will
-              be assigned "#ffaa00", "pink", or "#0000ff" as appropriate.
+              "#f0f", "#0000ff", then then each of those 1000 datapoints will
+              be assigned "#ffaa00", "#f0f", or "#0000ff" as appropriate.
 
             If the dataframe is in wide format (that is, y is a sequence of
             columns), this can also be:
@@ -651,7 +642,7 @@ class ArrowAltairMixin:
               as the number of y values.
 
               For example, for a chart with have 3 series this argument can
-              be set to ``color=["gold", "pink", "blue"]``.
+              be set to ``color=["#fd0", "#f0f", "#04f"]``.
 
         width : int
             The chart width in pixels. If 0, selects the width automatically.
@@ -1213,7 +1204,7 @@ def _get_color_enc(
 
         # If the 0th element in the color column looks like a color, we'll use the color column
         # values as the colors in our chart.
-        elif len(data[color_column]) and is_color_str(data[color_column][0]):
+        elif len(data[color_column]) and is_color_str_like(data[color_column][0]):
             color_enc["scale"] = alt.Scale(range=data[color_column].unique().tolist())
             color_enc["legend"] = None
 

@@ -77,42 +77,61 @@ def to_css_color(color: MaybeColor) -> Color:
     raise InvalidColorException(color)
 
 
-def is_color_str(color: str) -> bool:
-    if isinstance(color, str):
-        return is_color(color)
-    return False
+def is_color_str_like(color: MaybeColor) -> bool:
+    return (
+        isinstance(color, str) and color.startswith("#") and len(color) in {4, 5, 7, 9}
+    )
 
 
-def is_color(color: MaybeColor) -> bool:
-    # Differently from to_css_color, here we can't escape importing
-    # Matplotlib (or similar).
-    try:
-        import matplotlib.colors as mcolors
-    except ModuleNotFoundError as ex:
-        raise StreamlitModuleNotFoundError("matplotlib") from ex
-
-    return mcolors.is_color_like(color)
+def is_color_tuple_like(color: MaybeColor) -> bool:
+    return (
+        isinstance(color, (tuple, list))
+        and len(color) in {3, 4}
+        and all(isinstance(c, (int, float)) for c in color)
+    )
 
 
+def is_color_like(color: MaybeColor) -> bool:
+    return is_color_str_like(color) or is_color_tuple_like(color)
+
+
+# Wrote our own hex-to-tuple parser to avoid bringing in a dependency.
 def _to_color_tuple(
     color: MaybeColor,
     rgb_formatter: Callable[[float], float],
     alpha_formatter: Callable[[float], float],
-) -> ColorTuple:
-    if isinstance(color, str):
-        # Differently from to_css_color, here we can't escape importing
-        # Matplotlib (or similar).
-        try:
-            import matplotlib.colors as mcolors
-        except ModuleNotFoundError as ex:
-            raise StreamlitModuleNotFoundError("matplotlib") from ex
+):
+    if is_color_str_like(color):
+        hex_len = len(color)
 
-        try:
-            color = mcolors.to_rgba(color)
-        except ValueError as ex:
-            raise InvalidColorException(color) from ex
+        if hex_len == 4:
+            r, g, b = color[1:4]
+            r = 2 * r
+            g = 2 * g
+            b = 2 * b
+            a = "ff"
+        elif hex_len == 5:
+            r, g, b, a = color[1:5]
+            r = 2 * r
+            g = 2 * g
+            b = 2 * b
+            a = 2 * a
+        elif hex_len == 7:
+            r = color[1:3]
+            g = color[3:5]
+            b = color[5:7]
+            a = "ff"
+        elif hex_len == 9:
+            r = color[1:3]
+            g = color[3:5]
+            b = color[5:7]
+            a = color[7:9]
+        else:
+            raise InvalidColorException(color)
 
-    if isinstance(color, (tuple, list)):
+        color = int(r, 16), int(g, 16), int(b, 16), int(a, 16)
+
+    if is_color_tuple_like(color):
         return _normalize_tuple(color, rgb_formatter, alpha_formatter)
 
     raise InvalidColorException(color)

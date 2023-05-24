@@ -31,7 +31,7 @@ df = pd.DataFrame(
 # Pulled ito a separate df because this doesn't make sense for certain charts.
 df2 = df.copy()
 df2["e"] = ["bird" if x % 2 else "airplane" for x in range(20)]
-df2["f"] = ["red" if x % 2 else "blue" for x in range(20)]
+df2["f"] = ["#f00" if x % 2 else "#00f" for x in range(20)]
 
 """
 ### Wide dataframe with x and y implicitly set
@@ -138,17 +138,15 @@ st._arrow_scatterplot_chart(df, x="a", y=["b", "c"], color="c")
 
 Should show 2 series (in orange and green) with circles of varying sizes.
 """
-st._arrow_scatterplot_chart(
-    df, x="a", y=["b", "c"], color=["orange", "green"], size="d"
-)
+st._arrow_scatterplot_chart(df, x="a", y=["b", "c"], color=["#e60", "#4f2"], size="d")
 
 """
-Should show 1 series (in orange) with circles of varying sizes.
+Should show 1 series (in #e60) with circles of varying sizes.
 """
-st._arrow_scatterplot_chart(df, x="a", y="b", color="orange", size="d")
+st._arrow_scatterplot_chart(df, x="a", y="b", color="#e60", size="d")
 
 """
-### Nominal color
+### Columns with nominal colors
 
 Should show two 2 using the default colors, with circles of varying
 sizes.
@@ -156,7 +154,7 @@ sizes.
 st._arrow_scatterplot_chart(df2, x="a", y="b", color="e", size="d")
 
 """
-### Named color
+### Columns with color values
 
 Should show 2 series (red and blue), with circles of varying sizes and no
 color legend.
