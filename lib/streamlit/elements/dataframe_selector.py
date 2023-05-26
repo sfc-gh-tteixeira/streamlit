@@ -759,17 +759,6 @@ class DataFrameSelectorMixin:
             the scenes. If None, draws the data of all remaining columns as data series.
             This argument can only be supplied by keyword.
 
-        size : str, float, or None
-            The size of the circles representing each point. This argument can
-            only be supplied by keyword.
-
-            This can be:
-
-            - A number like 100, to specify a single size to use for all
-              datapoints.
-            - The name of the column to use for the size. This allows each
-              datapoint to be represented by a circle of a different size.
-
         color : str, tuple, sequence of str, sequence of tuple, or None
             The color of the circles representing each datapoint. This argument
             can only be supplied by keyword.
@@ -811,6 +800,17 @@ class DataFrameSelectorMixin:
 
               For example, for a chart with have 3 series this argument can
               be set to ``color=["#fd0", "#f0f", "#04f"]``.
+
+        size : str, float, or None
+            The size of the circles representing each point. This argument can
+            only be supplied by keyword.
+
+            This can be:
+
+            - A number like 100, to specify a single size to use for all
+              datapoints.
+            - The name of the column to use for the size. This allows each
+              datapoint to be represented by a circle of a different size.
 
         width : int
             The chart width in pixels. If 0, selects the width automatically.

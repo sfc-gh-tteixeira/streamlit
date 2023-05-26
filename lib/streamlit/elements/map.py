@@ -82,8 +82,8 @@ class MapMixin:
         *,
         lat: Optional[str] = None,
         lon: Optional[str] = None,
-        size: Union[str, float] = 10,
         color: Union[str, Color] = (200, 30, 0, 160),
+        size: Union[str, float] = 10,
         map_style: Optional[str] = None,
     ) -> "DeltaGenerator":
         """Display a map with a scatterpoint overlayed onto it.
@@ -134,17 +134,6 @@ class MapMixin:
             If None, the latitude data will come from any column named 'lon',
             'longitude', 'LON', or 'LONGITUDE'.
 
-        size : str, float, or None
-            The size of the circles representing each point. This argument can
-            only be supplied by keyword.
-
-            This can be:
-
-            - A number like 100, to specify a single size to use for all
-              datapoints.
-            - The name of the column to use for the size. This allows each
-              datapoint to be represented by a circle of a different size.
-
         color : str or tuple
             The color of the circles representing each datapoint. This argument
             can only be supplied by keyword.
@@ -160,6 +149,17 @@ class MapMixin:
               as described above.
 
             If passing in a str, the Matplotlib library must be installed.
+
+        size : str, float, or None
+            The size of the circles representing each point. This argument can
+            only be supplied by keyword.
+
+            This can be:
+
+            - A number like 100, to specify a single size to use for all
+              datapoints.
+            - The name of the column to use for the size. This allows each
+              datapoint to be represented by a circle of a different size.
 
         map_style : str or None
             One of Mapbox's map style URLs. A full list can be found here:
