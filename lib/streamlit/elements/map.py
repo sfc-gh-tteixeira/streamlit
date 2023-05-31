@@ -77,14 +77,14 @@ class MapMixin:
     def map(
         self,
         data: Data = None,
-        zoom: Optional[int] = None,
-        use_container_width: bool = True,
         *,
-        lat: Optional[str] = None,
-        lon: Optional[str] = None,
+        latitude: Optional[str] = None,
+        longitude: Optional[str] = None,
         color: Union[str, Color] = (200, 30, 0, 160),
         size: Union[str, float] = 10,
+        zoom: Optional[int] = None,
         map_style: Optional[str] = None,
+        use_container_width: bool = True,
     ) -> "DeltaGenerator":
         """Display a map with a scatterpoint overlayed onto it.
 
@@ -112,13 +112,7 @@ class MapMixin:
             snowflake.snowpark.table.Table, Iterable, dict, or None
             The data to be plotted.
 
-        zoom : int
-            Zoom level as specified in
-            https://wiki.openstreetmap.org/wiki/Zoom_levels
-
-        use_container_width: bool
-
-        lat : str or None
+        latitude : str or None
             The name of the column containing the latitude coordinates of
             the datapoints in the chart. This argument can only be supplied
             by keyword.
@@ -126,7 +120,7 @@ class MapMixin:
             If None, the latitude data will come from any column named 'lat',
             'latitude', 'LAT', or 'LATITUDE'.
 
-        lon : str or None
+        longitude : str or None
             The name of the column containing the latitude coordinates of
             the datapoints in the chart. This argument can only be supplied
             by keyword.
@@ -161,12 +155,22 @@ class MapMixin:
             - The name of the column to use for the size. This allows each
               datapoint to be represented by a circle of a different size.
 
+        zoom : int
+            Zoom level as specified in
+            https://wiki.openstreetmap.org/wiki/Zoom_levels.
+            This argument can only be supplied by keyword.
+
         map_style : str or None
             One of Mapbox's map style URLs. A full list can be found here:
             https://docs.mapbox.com/api/maps/styles/#mapbox-styles
 
             This feature requires a Mapbox token. See above for information on
             how to get one and set it up in Streamlit.
+
+        use_container_width: bool
+            If True, set the chart width to the column width. This takes
+            precedence over the width argument.
+            This argument can only be supplied by keyword.
 
         Example
         -------
@@ -199,14 +203,16 @@ class MapMixin:
         >>> df[col4] = np.arange[0, 1000]
         >>>
         >>> st.map(df,
-        ...     lat='col1',
-        ...     lon='col2',
+        ...     latitude='col1',
+        ...     longitude='col2',
         ...     size='col3',
         ...     color='col4')
 
         """
         map_proto = DeckGlJsonChartProto()
-        map_proto.json = to_deckgl_json(data, lat, lon, size, color, map_style, zoom)
+        map_proto.json = to_deckgl_json(
+            data, latitude, longitude, size, color, map_style, zoom
+        )
         map_proto.use_container_width = use_container_width
         return self.dg._enqueue("deck_gl_json_chart", map_proto)
 
