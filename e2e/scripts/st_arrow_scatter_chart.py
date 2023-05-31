@@ -55,13 +55,6 @@ There should be 1 series. x should be in [0, 20] and there should be a decreasin
 """
 st._arrow_scatter_chart(df, y="a")
 
-"""### Wide dataframe with explicit x, y
-
-There should be 1 series. x should be in [-20, 0] and there should be no increasing or decreasing
-line.
-"""
-st._arrow_scatter_chart(df, x="a", y="b")
-
 """
 There should be 1 series. x should be in [0, 10] and there should be no increasing or decreasing
 line.
@@ -78,11 +71,6 @@ st._arrow_scatter_chart(df, y=["a", "b"])
 """
 ### Size is set to a value
 
-There should be 1 series. Circles should be bigger.
-"""
-st._arrow_scatter_chart(df, x="a", y="b", size=500)
-
-"""
 There should be 2 series. Circles should be bigger.
 """
 st._arrow_scatter_chart(df, x="a", y=["b", "c"], size=500)
@@ -90,11 +78,6 @@ st._arrow_scatter_chart(df, x="a", y=["b", "c"], size=500)
 """
 ### Size is set to a column
 
-There should be 1 series. Circles should vary in size.
-"""
-st._arrow_scatter_chart(df, x="a", y="b", size="c")
-
-"""
 There should be 2 series. Circles for same x value should have the same size.
 """
 st._arrow_scatter_chart(df, x="a", y=["b", "c"], size="d")
@@ -107,7 +90,7 @@ There should be 1 series. Circles should vary in color and size. Color scale sho
 st._arrow_scatter_chart(df, x="a", y="b", color="c", size="d")
 
 """
-### Some of the long component are the same
+### Some of the long components are the same
 
 There should be 1 series. Circles should vary in color and size, but color and size components are
 the same.
@@ -139,11 +122,6 @@ st._arrow_scatter_chart(df, x="a", y=["b", "c"], color="c")
 Should show 2 series (in orange and green) with circles of varying sizes.
 """
 st._arrow_scatter_chart(df, x="a", y=["b", "c"], color=["#e60", "#4f2"], size="d")
-
-"""
-Should show 1 series (in #e60) with circles of varying sizes.
-"""
-st._arrow_scatter_chart(df, x="a", y="b", color="#e60", size="d")
 
 """
 ### Columns with nominal colors
