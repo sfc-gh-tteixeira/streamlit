@@ -28,10 +28,20 @@ from tests.delta_generator_test_case import DeltaGeneratorTestCase
 # from tests.streamlit import pyspark_mocks
 from tests.streamlit.snowpark_mocks import DataFrame as MockedSnowparkDataFrame
 from tests.streamlit.snowpark_mocks import Table as MockedSnowparkTable
-
-# from tests.testutil import create_snowpark_session, should_skip_pyspark_tests
+from tests.testutil import create_snowpark_session, should_skip_pyspark_tests
 
 df1 = pd.DataFrame({"lat": [1, 2, 3, 4], "lon": [10, 20, 30, 40]})
+df2 = pd.DataFrame(
+    {
+        "lat": [38.8762997, 38.8742997, 38.9025842],
+        "lon": [-77.0037, -77.0057, -77.0556545],
+        "int_color": [[255, 0, 0, 128], [0, 255, 0, 128], [0, 0, 255, 128]],
+        "hex_color": ["#f00", "#f0f", "#00f"],
+        "size": [100, 50, 30],
+        "xlat": [-38.8762997, -38.8742997, -38.9025842],
+        "xlon": [77.0037, 77.0057, 77.0556545],
+    }
+)
 
 
 class StMapTest(DeltaGeneratorTestCase):
@@ -207,24 +217,24 @@ class StMapTest(DeltaGeneratorTestCase):
         """Check if map data have 4 rows"""
         self.assertEqual(len(c["layers"][0]["data"]), 4)
 
-    # @pytest.mark.skipif(
-    #     should_skip_pyspark_tests(), reason="pyspark is incompatible with Python3.11"
-    # )
-    # def test_pyspark_dataframe(self):
-    #     """Test st.map with pyspark.sql.DataFrame"""
-    #     pyspark_map_dataframe = (
-    #         pyspark_mocks.create_pyspark_dataframe_with_mocked_map_data()
-    #     )
-    #     st.map(pyspark_map_dataframe)
+    @pytest.mark.skipif(
+        should_skip_pyspark_tests(), reason="pyspark is incompatible with Python3.11"
+    )
+    def test_pyspark_dataframe(self):
+        """Test st.map with pyspark.sql.DataFrame"""
+        pyspark_map_dataframe = (
+            pyspark_mocks.create_pyspark_dataframe_with_mocked_map_data()
+        )
+        st.map(pyspark_map_dataframe)
 
-    #     c = json.loads(self.get_delta_from_queue().new_element.deck_gl_json_chart.json)
+        c = json.loads(self.get_delta_from_queue().new_element.deck_gl_json_chart.json)
 
-    #     self.assertIsNotNone(c.get("initialViewState"))
-    #     self.assertIsNotNone(c.get("layers"))
-    #     self.assertIsNone(c.get("mapStyle"))
-    #     self.assertEqual(len(c.get("layers")), 1)
-    #     self.assertEqual(c.get("initialViewState").get("pitch"), 0)
-    #     self.assertEqual(c.get("layers")[0].get("@@type"), "ScatterplotLayer")
+        self.assertIsNotNone(c.get("initialViewState"))
+        self.assertIsNotNone(c.get("layers"))
+        self.assertIsNone(c.get("mapStyle"))
+        self.assertEqual(len(c.get("layers")), 1)
+        self.assertEqual(c.get("initialViewState").get("pitch"), 0)
+        self.assertEqual(c.get("layers")[0].get("@@type"), "ScatterplotLayer")
 
-    #     """Check if map data has 5 rows"""
-    #     self.assertEqual(len(c["layers"][0]["data"]), 5)
+        """Check if map data has 5 rows"""
+        self.assertEqual(len(c["layers"][0]["data"]), 5)
