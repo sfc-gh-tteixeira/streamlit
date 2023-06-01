@@ -23,6 +23,7 @@ from parameterized import parameterized
 
 import streamlit as st
 from streamlit.elements.map import _DEFAULT_MAP, _DEFAULT_ZOOM_LEVEL
+from streamlit.errors import StreamlitAPIException
 from tests.delta_generator_test_case import DeltaGeneratorTestCase
 
 # from tests.streamlit import pyspark_mocks
@@ -31,17 +32,6 @@ from tests.streamlit.snowpark_mocks import Table as MockedSnowparkTable
 from tests.testutil import create_snowpark_session, should_skip_pyspark_tests
 
 df1 = pd.DataFrame({"lat": [1, 2, 3, 4], "lon": [10, 20, 30, 40]})
-df2 = pd.DataFrame(
-    {
-        "lat": [38.8762997, 38.8742997, 38.9025842],
-        "lon": [-77.0037, -77.0057, -77.0556545],
-        "int_color": [[255, 0, 0, 128], [0, 255, 0, 128], [0, 0, 255, 128]],
-        "hex_color": ["#f00", "#f0f", "#00f"],
-        "size": [100, 50, 30],
-        "xlat": [-38.8762997, -38.8742997, -38.9025842],
-        "xlon": [77.0037, 77.0057, 77.0556545],
-    }
-)
 
 
 class StMapTest(DeltaGeneratorTestCase):
@@ -83,6 +73,136 @@ class StMapTest(DeltaGeneratorTestCase):
 
         c = json.loads(self.get_delta_from_queue().new_element.deck_gl_json_chart.json)
         self.assertEqual(len(c.get("layers")[0].get("data")), 4)
+
+    def test_main_kwargs(self):
+        """Test that latitude, longitude, color and size propagate correctly."""
+        df = pd.DataFrame(
+            {
+                "lat": [38.8762997, 38.8742997, 38.9025842],
+                "lon": [-77.0037, -77.0057, -77.0556545],
+                "int_color": [[255, 0, 0, 128], [0, 255, 0, 128], [0, 0, 255, 128]],
+                "size": [100, 50, 30],
+                "xlat": [-38.8762997, -38.8742997, -38.9025842],
+                "xlon": [77.0037, 77.0057, 77.0556545],
+            }
+        )
+
+        st.map(df, latitude="xlat", longitude="xlon", color="int_color", size="size")
+        c = json.loads(self.get_delta_from_queue().new_element.deck_gl_json_chart.json)
+
+        self.assertEqual(c.get("layers")[0].get("getPosition"), "@@=[xlon, xlat]")
+        self.assertEqual(c.get("layers")[0].get("getFillColor"), "@@=int_color")
+        self.assertEqual(c.get("layers")[0].get("getRadius"), "@@=size")
+
+        # Also test that the radius property is set up correctly.
+        self.assertEqual(c.get("layers")[0].get("radiusScale"), 10)
+        self.assertEqual(c.get("layers")[0].get("radiusMinPixels"), 3)
+
+    def test_common_color_formats(self):
+        """Test that colors can be in FOO format."""
+        df = pd.DataFrame(
+            {
+                "lat": [38.8762997, 38.8742997, 38.9025842],
+                "lon": [-77.0037, -77.0057, -77.0556545],
+                "tuple3_int_color": [[255, 0, 0], [0, 255, 0], [0, 0, 255]],
+                "tuple4_int_int_color": [
+                    [255, 0, 0, 51],
+                    [0, 255, 0, 51],
+                    [0, 0, 255, 51],
+                ],
+                "tuple4_int_float_color": [
+                    [255, 0, 0, 0.2],
+                    [0, 255, 0, 0.2],
+                    [0, 0, 255, 0.2],
+                ],
+                "tuple3_float_color": [
+                    [1.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 0.0, 1.0],
+                ],
+                "tuple4_float_float_color": [
+                    [1.0, 0.0, 0.0, 0.2],
+                    [0.0, 1.0, 0.0, 0.2],
+                    [0.0, 0.0, 1.0, 0.2],
+                ],
+                "hex3_color": ["#f00", "#0f0", "#00f"],
+                "hex4_color": ["#f008", "#0f08", "#00f8"],
+                "hex6_color": ["#ff0000", "#00ff00", "#0000ff"],
+                "hex8_color": ["#ff000088", "#00ff0088", "#0000ff88"],
+                "named_color": ["red", "green", "blue"],
+            }
+        )
+
+        color_columns = sorted(set(df.columns))
+        color_columns.remove("lat")
+        color_columns.remove("lon")
+
+        expected_values = {
+            "tuple3": [[255, 0, 0], [0, 255, 0], [0, 0, 255]],
+            "tuple4": [[255, 0, 0, 51], [0, 255, 0, 51], [0, 0, 255, 51]],
+            "hex3": [[255, 0, 0, 255], [0, 255, 0, 255], [0, 0, 255, 255]],
+            "hex6": [[255, 0, 0, 255], [0, 255, 0, 255], [0, 0, 255, 255]],
+            # 88 in hex = 136
+            "hex4": [[255, 0, 0, 136], [0, 255, 0, 136], [0, 0, 255, 136]],
+            "hex8": [[255, 0, 0, 136], [0, 255, 0, 136], [0, 0, 255, 136]],
+            "named": None,
+        }
+
+        def get_expected(col_name):
+            for prefix, expected in expected_values.items():
+                if col_name.startswith(prefix):
+                    return expected
+
+        for color_column in color_columns:
+            expected = get_expected(color_column)
+
+            if expected is None:
+                with self.assertRaises(StreamlitAPIException):
+                    st.map(df, color=color_column)
+
+            else:
+                st.map(df, color=color_column)
+                c = json.loads(
+                    self.get_delta_from_queue().new_element.deck_gl_json_chart.json
+                )
+
+                rows = c.get("layers")[0].get("data")
+
+                for i, row in enumerate(rows):
+                    self.assertEqual(row[color_column], expected[i])
+
+    def test_unused_columns_get_dropped(self):
+        """Test that unused columns don't get transmitted."""
+        df = pd.DataFrame(
+            {
+                "lat": [38.8762997, 38.8742997, 38.9025842],
+                "lon": [-77.0037, -77.0057, -77.0556545],
+                "int_color": [[255, 0, 0, 128], [0, 255, 0, 128], [0, 0, 255, 128]],
+                "size": [100, 50, 30],
+                "xlat": [-38.8762997, -38.8742997, -38.9025842],
+                "xlon": [77.0037, 77.0057, 77.0556545],
+            }
+        )
+
+        st.map(df)
+        c = json.loads(self.get_delta_from_queue().new_element.deck_gl_json_chart.json)
+        self.assertEqual(len(c.get("layers")[0].get("data")[0]), 2)
+
+        st.map(df, latitude="xlat", longitude="xlon")
+        c = json.loads(self.get_delta_from_queue().new_element.deck_gl_json_chart.json)
+        self.assertEqual(len(c.get("layers")[0].get("data")[0]), 2)
+
+        st.map(df, latitude="xlat", longitude="xlon", color="int_color")
+        c = json.loads(self.get_delta_from_queue().new_element.deck_gl_json_chart.json)
+        self.assertEqual(len(c.get("layers")[0].get("data")[0]), 3)
+
+        st.map(df, latitude="xlat", longitude="xlon", size="size")
+        c = json.loads(self.get_delta_from_queue().new_element.deck_gl_json_chart.json)
+        self.assertEqual(len(c.get("layers")[0].get("data")[0]), 3)
+
+        st.map(df, latitude="xlat", longitude="xlon", color="int_color", size="size")
+        c = json.loads(self.get_delta_from_queue().new_element.deck_gl_json_chart.json)
+        self.assertEqual(len(c.get("layers")[0].get("data")[0]), 4)
 
     def test_default_map_copy(self):
         """Test that _DEFAULT_MAP is not modified as other work occurs."""

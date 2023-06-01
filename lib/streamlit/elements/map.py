@@ -273,13 +273,24 @@ def to_deckgl_json(
         data, "longitude", lon, {"lon", "longitude", "LON", "LONGITUDE"}
     )
     size, size_col_name = _get_size_arg_and_col_name(data, size)
-    color, data = _get_color_arg_and_calc_color_col(
+    color, color_col_name, data = _get_color_arg_and_calc_color_col(
         data, color, lat_col_name, lon_col_name, size_col_name
     )
 
     zoom, center_lat, center_lon = _get_viewport_details(
         data, lat_col_name, lon_col_name, zoom
     )
+
+    # Drop columns we're not using.
+    # (Sort for tests)
+    used_columns = sorted(
+        [
+            c
+            for c in {lat_col_name, lon_col_name, size_col_name, color_col_name}
+            if c is not None
+        ]
+    )
+    data = data[used_columns]
 
     default = copy.deepcopy(_DEFAULT_MAP)
     default["initialViewState"]["latitude"] = center_lat
@@ -345,13 +356,14 @@ def _get_size_arg_and_col_name(
     size: Optional[str],
 ) -> [str, str]:
 
-    col_name = None
-
     if size in data.columns:
         col_name = size
-        size = f"@@={size}"
+        size_arg = f"@@={col_name}"
+    else:
+        col_name = None
+        size_arg = size
 
-    return size, col_name
+    return size_arg, col_name
 
 
 def _get_color_arg_and_calc_color_col(
@@ -361,13 +373,13 @@ def _get_color_arg_and_calc_color_col(
     lon_col_name: str,
     size_col_name: str,
 ) -> [str, pd.DataFrame]:
-
     if color in data.columns:
-        color_arg = f"@@={color}"
-        new_data = data
+        col_name = color
+        color_arg = f"@@={col_name}"
 
-        if len(data[color]) > 0 and is_color_like(data[color][0]):
-            parsed_color = data[color].apply(to_int_color_tuple)
+        # Convert colors to the right format.
+        if len(data[col_name]) > 0 and is_color_like(data[col_name][0]):
+            parsed_color = data[col_name].apply(to_int_color_tuple)
 
             # Clone data to avoid transforming the original dataframe.
             new_data = data[[lat_col_name, lon_col_name]].copy()
@@ -375,11 +387,17 @@ def _get_color_arg_and_calc_color_col(
             if size_col_name:
                 new_data[size_col_name] = data[size_col_name]
 
-            new_data[color] = parsed_color
+            new_data[col_name] = parsed_color
+            data = new_data
+        else:
+            raise StreamlitAPIException(
+                f'Column "{col_name}" does not appear to contain valid colors.'
+            )
+    else:
+        color_arg = to_int_color_tuple(color)
+        col_name = None
 
-        return color_arg, new_data
-
-    return to_int_color_tuple(color), data
+    return color_arg, col_name, data
 
 
 def _get_viewport_details(data, lat_col_name, lon_col_name, zoom):

@@ -834,6 +834,7 @@ def prep_data(
         data = data.reset_index(names=x_column)
 
     # Drop columns we're not using.
+    # (Sort for tests)
     used_columns = sorted(
         [
             c
