@@ -50,6 +50,7 @@ MaybeColor: TypeAlias = Union[str, Tuple]
 
 
 def to_int_color_tuple(color: MaybeColor) -> IntColorTuple:
+    """Convert input into color tuple of type (int, int, int, int)."""
     color_tuple = _to_color_tuple(
         color,
         rgb_formatter=_int_formatter,
@@ -59,15 +60,19 @@ def to_int_color_tuple(color: MaybeColor) -> IntColorTuple:
 
 
 def to_css_color(color: MaybeColor) -> Color:
-    if isinstance(color, str):
-        # Assume it's a valid CSS color.
-        # The alternative would be to try to parse it with Matplotlib but:
-        # 1. That doesn't support all types of CSS colors, like rgb(), etc.
-        # 2. That would require an additional import, which would be nice to
-        #    avoid.
+    """Convert input into a CSS-compatible color.
+
+    NOTE: We *do not* support all CSS-compatible strings as input.
+
+    Inputs must be a hex string or a color tuple. Inputs may not be a CSS
+    color name, a CSS color function (like "rgb(...)"), etc.
+
+    See tests for more info.
+    """
+    if is_hex_color_like(color):
         return color
 
-    if isinstance(color, (tuple, list)):
+    if is_color_tuple_like(color):
         color = _normalize_tuple(color, _int_formatter, _float_formatter)
         if len(color) == 3:
             return f"rgb({color[0]}, {color[1]}, {color[2]})"
@@ -77,13 +82,26 @@ def to_css_color(color: MaybeColor) -> Color:
     raise InvalidColorException(color)
 
 
-def is_color_str_like(color: MaybeColor) -> bool:
+def is_hex_color_like(color: MaybeColor) -> bool:
+    """A fairly lightweight check of whether the input is a hex string color.
+
+    This isn't meant to be a definitive answer. The definitive solution is to
+    try to convert and see if an error is thrown.
+    """
     return (
-        isinstance(color, str) and color.startswith("#") and len(color) in {4, 5, 7, 9}
+        isinstance(color, str)
+        and color.startswith("#")
+        and color[1:].isalnum()  # Alphanumeric
+        and len(color) in {4, 5, 7, 9}
     )
 
 
 def is_color_tuple_like(color: MaybeColor) -> bool:
+    """A fairly lightweight check of whether the input is a tuple color.
+
+    This isn't meant to be a definitive answer. The definitive solution is to
+    try to convert and see if an error is thrown.
+    """
     return (
         isinstance(color, (tuple, list))
         and len(color) in {3, 4}
@@ -92,7 +110,12 @@ def is_color_tuple_like(color: MaybeColor) -> bool:
 
 
 def is_color_like(color: MaybeColor) -> bool:
-    return is_color_str_like(color) or is_color_tuple_like(color)
+    """A fairly lightweight check of whether the input is a color.
+
+    This isn't meant to be a definitive answer. The definitive solution is to
+    try to convert and see if an error is thrown.
+    """
+    return is_hex_color_like(color) or is_color_tuple_like(color)
 
 
 # Wrote our own hex-to-tuple parser to avoid bringing in a dependency.
@@ -101,7 +124,7 @@ def _to_color_tuple(
     rgb_formatter: Callable[[float], float],
     alpha_formatter: Callable[[float], float],
 ):
-    if is_color_str_like(color):
+    if is_hex_color_like(color):
         hex_len = len(color)
 
         if hex_len == 4:
@@ -129,7 +152,10 @@ def _to_color_tuple(
         else:
             raise InvalidColorException(color)
 
-        color = int(r, 16), int(g, 16), int(b, 16), int(a, 16)
+        try:
+            color = int(r, 16), int(g, 16), int(b, 16), int(a, 16)
+        except:
+            raise InvalidColorException(color)
 
     if is_color_tuple_like(color):
         return _normalize_tuple(color, rgb_formatter, alpha_formatter)
@@ -143,30 +169,42 @@ def _normalize_tuple(
     alpha_formatter: Callable[[float], float],
 ) -> ColorTuple:
     if 3 <= len(color) <= 4:
-        rgb = [rgb_formatter(c) for c in color[:3]]
+        rgb = [rgb_formatter(c, color) for c in color[:3]]
         if len(color) == 4:
-            alpha = alpha_formatter(color[3])
+            alpha = alpha_formatter(color[3], color)
             return [*rgb, alpha]
         return rgb
 
     raise InvalidColorException(color)
 
 
-def _int_formatter(component: float) -> int:
+def _int_formatter(component: float, color: MaybeColor) -> int:
     if isinstance(component, float):
         component = int(component * 255)
 
-    return min(255, max(component, 0))
+    if isinstance(component, int):
+        return min(255, max(component, 0))
+
+    raise InvalidColorException(color)
 
 
-def _float_formatter(component: float) -> float:
+def _float_formatter(component: float, color: MaybeColor) -> float:
     if isinstance(component, int):
         component = component / 255.0
 
-    return min(1.0, max(component, 0.0))
+    if isinstance(component, float):
+        return min(1.0, max(component, 0.0))
+
+    raise InvalidColorException(color)
 
 
 class InvalidColorException(StreamlitAPIException):
     def __init__(self, color, *args):
-        message = f"This does not look like a valid color: {repr(color)}"
+        message = f"""This does not look like a valid color: {repr(color)}.
+
+Colors must be in one of the following formats:
+
+* Hex string with 3, 4, 6, or 8 digits. Example: `'#00ff00'`
+* List or tuple with 3 or 4 components. Example: `[1.0, 0.5, 0, 0.2]`
+            """
         super().__init__(message, *args)

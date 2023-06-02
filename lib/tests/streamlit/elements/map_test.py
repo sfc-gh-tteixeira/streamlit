@@ -29,7 +29,11 @@ from tests.delta_generator_test_case import DeltaGeneratorTestCase
 # from tests.streamlit import pyspark_mocks
 from tests.streamlit.snowpark_mocks import DataFrame as MockedSnowparkDataFrame
 from tests.streamlit.snowpark_mocks import Table as MockedSnowparkTable
-from tests.testutil import create_snowpark_session, should_skip_pyspark_tests
+from tests.testutil import (
+    create_snowpark_session,
+    patch_config_options,
+    should_skip_pyspark_tests,
+)
 
 df1 = pd.DataFrame({"lat": [1, 2, 3, 4], "lon": [10, 20, 30, 40]})
 
@@ -203,6 +207,33 @@ class StMapTest(DeltaGeneratorTestCase):
         st.map(df, latitude="xlat", longitude="xlon", color="int_color", size="size")
         c = json.loads(self.get_delta_from_queue().new_element.deck_gl_json_chart.json)
         self.assertEqual(len(c.get("layers")[0].get("data")[0]), 4)
+
+    def test_original_df_is_untouched(self):
+        """Test that when we modify the outgoing DF we don't mutate the input DF."""
+        df = pd.DataFrame(
+            {
+                "lat": [38.8762997, 38.8742997, 38.9025842],
+                "lon": [-77.0037, -77.0057, -77.0556545],
+                "foo": [0, 1, 2],
+            }
+        )
+
+        st.map(df)
+        c = json.loads(self.get_delta_from_queue().new_element.deck_gl_json_chart.json)
+        self.assertEqual(len(c.get("layers")[0].get("data")[0]), 2)
+        self.assertEqual(len(df.columns), 3)
+
+    def test_map_style_raises_error(self):
+        """Test that map_style raises error when no Mapbox token is present."""
+        with self.assertRaises(StreamlitAPIException):
+            st.map(df1, map_style="FOOBAR")
+
+    @patch_config_options({"mapbox.token": "MY_TOKEN"})
+    def test_map_style(self):
+        """Test that map_style works when a Mapbox token is present."""
+        st.map(df1, map_style="MY_MAP_STYLE")
+        c = json.loads(self.get_delta_from_queue().new_element.deck_gl_json_chart.json)
+        self.assertEqual(c.get("mapStyle"), "MY_MAP_STYLE")
 
     def test_default_map_copy(self):
         """Test that _DEFAULT_MAP is not modified as other work occurs."""

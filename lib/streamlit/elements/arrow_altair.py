@@ -39,7 +39,13 @@ from typing_extensions import Literal
 
 import streamlit.elements.arrow_vega_lite as arrow_vega_lite
 from streamlit import type_util
-from streamlit.color_util import Color, is_color_str_like, to_css_color
+from streamlit.color_util import (
+    Color,
+    is_color_like,
+    is_color_tuple_like,
+    is_hex_color_like,
+    to_css_color,
+)
 from streamlit.elements.altair_utils import ChartInfo
 from streamlit.elements.arrow import Data
 from streamlit.elements.utils import last_index_for_melted_dataframes
@@ -844,8 +850,23 @@ def prep_data(
     )
     selected_data = data[used_columns]
 
+    # Maybe convert color to CSS-valid colors.
+    if color_column is not None and len(data[color_column]):
+        first_color_datum = data[color_column][0]
+
+        if is_hex_color_like(first_color_datum):
+            # To save time, we only need to convert color-tuples,because
+            # to_css_color() doesn't do anything with hex colors anyway.
+            pass
+        elif is_color_tuple_like(first_color_datum):
+            selected_data[color_column] = selected_data[color_column].map(to_css_color)
+        else:
+            # Other kinds of colors columns (i.e. pure numbers or nominal strings) shouldn't
+            # be converted.
+            pass
+
     # Arrow has problems with object types after melting two different dtypes
-    # pyarrow.lib.ArrowTypeError: "Expected a <TYPE> object, got a object"
+    # pyarrow.lib.ArrowTypeError: "Expected a <TYPE> object, got a object".
     prepped_data = type_util.fix_arrow_incompatible_column_types(selected_data)
 
     # Return the data, but also the new names to use for x, y, and color.
@@ -909,25 +930,31 @@ def _generate_chart(
         chart = chart.encode(
             x=_get_x_enc(data, chart_type, x_column),
             y=_get_y_enc(data, y_column, y_columns),
-            tooltip=_get_tooltip_enc(
-                x_column,
-                y_column,
-                color_column,
-                size_column,
-            ),
         )
 
     opacity_enc = _get_opacity_enc(chart_type, color_column, y_column)
     if opacity_enc is not None:
         chart = chart.encode(opacity=opacity_enc)
 
-    color_enc = _get_color_enc(data, color_from_user, color_value, color_column)
+    color_enc = _get_color_enc(
+        data, color_from_user, color_value, color_column, y_columns
+    )
     if color_enc is not None:
         chart = chart.encode(color=color_enc)
 
     size_enc = _get_size_enc(chart_type, size_column, size_value)
     if size_enc is not None:
         chart = chart.encode(size=size_enc)
+
+    chart = chart.encode(
+        tooltip=_get_tooltip_enc(
+            x_column,
+            y_column,
+            size_column,
+            color_column,
+            color_enc,
+        )
+    )
 
     return chart.interactive(), chart_info
 
@@ -1014,11 +1041,15 @@ def _select_relevant_columns(data: pd.DataFrame, column_names) -> pd.DataFrame:
 
 
 def _get_opacity_enc(chart_type: ChartType, color_column: str, y_column: str) -> Any:
+    import altair as alt
+
     if chart_type == ChartType.AREA and color_column:
         return alt.OpacityValue(0.7)
 
 
 def _get_scale(data: pd.DataFrame, column_name: str) -> alt.Scale:
+    import altair as alt
+
     # Set the X and Y axes' scale to "utc" if they contain date values.
     # This causes time data to be displayed in UTC, rather the user's local
     # time zone. (By default, vega-lite displays time data in the browser's
@@ -1031,6 +1062,8 @@ def _get_scale(data: pd.DataFrame, column_name: str) -> alt.Scale:
 
 
 def _get_x_type(data: pd.DataFrame, chart_type: ChartType, x_column: str) -> Any:
+    import altair as alt
+
     # Bar charts should have a discrete (ordinal) x-axis, UNLESS type is date/time
     # https://github.com/streamlit/streamlit/pull/2097#issuecomment-714802475
     if chart_type == ChartType.BAR and not _is_date_column(data, x_column):
@@ -1040,6 +1073,8 @@ def _get_x_type(data: pd.DataFrame, chart_type: ChartType, x_column: str) -> Any
 
 
 def _get_axis_config(data: pd.DataFrame, column_name: str, grid: bool):
+    import altair as alt
+
     # Use a max tick size of 1 for integer columns (prevents zoom into float numbers)
     # and deactivate grid lines for x-axis
     return alt.Axis(
@@ -1053,6 +1088,7 @@ def _get_x_enc(
     chart_type: ChartType,
     x_column: str,
 ) -> alt.X:
+    import altair as alt
 
     if x_column == SEPARATED_INDEX_COLUMN_NAME:
         x_title = SEPARATED_INDEX_COLUMN_TITLE
@@ -1069,6 +1105,8 @@ def _get_x_enc(
 
 
 def _get_y_enc(data: pd.DataFrame, y_column: str, wide_y_columns: List[str]) -> alt.Y:
+    import altair as alt
+
     if y_column == MELTED_Y_COLUMN_NAME:
         y_title = MELTED_Y_COLUMN_TITLE
     else:
@@ -1092,9 +1130,12 @@ def _get_y_enc(data: pd.DataFrame, y_column: str, wide_y_columns: List[str]) -> 
 def _get_tooltip_enc(
     x_column: str,
     y_column: str,
-    color_column: str,
     size_column: str,
+    color_column: str,
+    color_enc: alt.Color,
 ) -> list[alt.Tooltip]:
+    import altair as alt
+
     tooltip = []
 
     if x_column == SEPARATED_INDEX_COLUMN_NAME:
@@ -1113,7 +1154,10 @@ def _get_tooltip_enc(
     else:
         tooltip.append(alt.Tooltip(y_column))
 
-    if color_column:
+    # If we earlier decided that there should be no color legend, that's because
+    # the # user passed a color column with actual color values (like "#ff0"),
+    # so we should likewise not show the color values in the tooltip.
+    if color_column and color_enc["legend"] is not None:
         # Use a human-readable title for the color.
         if color_column == MELTED_COLOR_COLUMN_NAME:
             tooltip.append(
@@ -1137,6 +1181,8 @@ def _get_size_enc(
     size_column: Optional[str],
     size_value: Union[str, float, None],
 ) -> Any:
+    import altair as alt
+
     if chart_type == ChartType.SCATTER:
         if size_column is not None:
             return alt.Size(
@@ -1152,6 +1198,7 @@ def _get_size_enc(
             raise StreamlitAPIException(
                 f"This does not look like a valid size: {repr(size_value)}"
             )
+
     elif size_column is not None or size_value is not None:
         raise Error(
             f"Chart type {chart_type.name} does not not support size argument. "
@@ -1164,27 +1211,40 @@ def _get_color_enc(
     color_from_user: Union[str, Color, None],
     color_value: Optional[Color],
     color_column: Optional[str],
+    y_columns: List[str],
 ) -> alt.Color:
+    import altair as alt
 
-    # A valid color_value takes precedence over color_column.
-
-    if isinstance(color_value, str):
-        return alt.ColorValue(to_css_color(color_value))
-
-    # TODO XXX: Move into elif color_column?
-    elif isinstance(color_value, (list, tuple)):
-        return alt.Color(
-            field=color_column,
-            scale=alt.Scale(range=[to_css_color(c) for c in color_value]),
-            legend=LEGEND_SETTINGS,
-            type="nominal",
-            title=" ",
-        )
-
-    elif color_column is None:
+    # Nothing to do here...
+    if color_value is None and color_column is None:
         return None
 
-    elif color_column:
+    # If user passed a color value, that should win over colors coming from the
+    # color column (be them manual or auto-assigned)
+    elif color_value is not None:
+
+        # If the color value is color-like, return that.
+        if is_color_like(color_value):
+            return alt.ColorValue(to_css_color(color_value)), False
+
+        # If the color value is a list of colors, return that.
+        elif isinstance(color_value, (list, tuple)):
+            if len(color_value) != len(y_columns):
+                raise StreamlitAPIException(
+                    f"The number of provided colors `{color_value}` does not "
+                    "match the number of columns to be colored, in "
+                    f"`{y_columns}`."
+                )
+
+            return alt.Color(
+                field=color_column,
+                scale=alt.Scale(range=[to_css_color(c) for c in color_value]),
+                legend=LEGEND_SETTINGS,
+                type="nominal",
+                title=" ",
+            )
+
+    elif color_column is not None:
         if color_column == MELTED_COLOR_COLUMN_NAME:
             column_type = "nominal"
         else:
@@ -1200,18 +1260,21 @@ def _get_color_enc(
             # full y-axis disappears (maybe a bug in vega-lite)?
             color_enc["title"] = " "
 
-        # If the 0th element in the color column looks like a color, we'll use the color column
+        # If the 0th element in the color column looks like a color, we'll use the color column's
         # values as the colors in our chart.
-        elif len(data[color_column]) and is_color_str_like(data[color_column][0]):
-            color_enc["scale"] = alt.Scale(range=data[color_column].unique().tolist())
+        elif len(data[color_column]) and is_color_like(data[color_column][0]):
+            color_range = [to_css_color(c) for c in data[color_column].unique()]
+            color_enc["scale"] = alt.Scale(range=color_range)
             color_enc["legend"] = None
 
-        return color_enc
+        # Otherwise, let Vega-Lite auto-assign colors.
+        # This codepath is typically reached when the color column contains numbers (in which case
+        # Vega-Lite uses a color gradient to represent them) or strings (in which case Vega-Lite
+        # assigns one color for each unique value).
+        else:
+            pass
 
-    else:
-        raise StreamlitAPIException(
-            f"This does not look like a valid color or column: {color_from_user}."
-        )
+        return color_enc
 
 
 def marshall(
