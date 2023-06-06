@@ -25,8 +25,7 @@ import streamlit as st
 from streamlit.elements.map import _DEFAULT_MAP, _DEFAULT_ZOOM_LEVEL
 from streamlit.errors import StreamlitAPIException
 from tests.delta_generator_test_case import DeltaGeneratorTestCase
-
-# from tests.streamlit import pyspark_mocks
+from tests.streamlit import pyspark_mocks
 from tests.streamlit.snowpark_mocks import DataFrame as MockedSnowparkDataFrame
 from tests.streamlit.snowpark_mocks import Table as MockedSnowparkTable
 from tests.testutil import (
