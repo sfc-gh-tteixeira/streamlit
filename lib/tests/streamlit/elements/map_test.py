@@ -152,15 +152,15 @@ class StMapTest(DeltaGeneratorTestCase):
             "named": None,
         }
 
-        def get_expected(col_name):
-            for prefix, expected in expected_values.items():
+        def get_expected_color_values(col_name):
+            for prefix, expected_color_values in expected_values.items():
                 if col_name.startswith(prefix):
-                    return expected
+                    return expected_color_values
 
         for color_column in color_columns:
-            expected = get_expected(color_column)
+            expected_color_values = get_expected_color_values(color_column)
 
-            if expected is None:
+            if expected_color_values is None:
                 with self.assertRaises(StreamlitAPIException):
                     st.map(df, color=color_column)
 
@@ -173,7 +173,7 @@ class StMapTest(DeltaGeneratorTestCase):
                 rows = c.get("layers")[0].get("data")
 
                 for i, row in enumerate(rows):
-                    self.assertEqual(row[color_column], expected[i])
+                    self.assertEqual(row[color_column], expected_color_values[i])
 
     def test_unused_columns_get_dropped(self):
         """Test that unused columns don't get transmitted."""

@@ -18,6 +18,8 @@ from streamlit import color_util
 
 valid_hex_colors = ["#123", "#1234", "#112233", "#11223344"]
 
+valid_css_rgb_colors = ["rgb(1, 2, 3)", "rgba(1, 2, 3, 4)"]
+
 valid_color_tuples = [
     [0, 1, 2],
     [0, 1, 2, 4],
@@ -45,6 +47,7 @@ invalid_colors = [
     100,
     # Unsupported CSS strings
     "red",
+    # This is only unsupported as user input, but it its used internally.
     "rgb(1, 2, 3)",
 ]
 
@@ -123,6 +126,9 @@ class ColorUtilTest(unittest.TestCase):
         # Checking for this in our code is not worth the cost.
         test_args.remove("#0z0")
 
+        # This is only unsupported as user input, but it its used internally.
+        test_args.remove("rgb(1, 2, 3)")
+
         for test_arg in test_args:
             with self.assertRaises(color_util.InvalidColorException):
                 color_util.to_css_color(test_arg)
@@ -140,6 +146,24 @@ class ColorUtilTest(unittest.TestCase):
 
         for test_arg in test_args:
             out = color_util.is_hex_color_like(test_arg)
+            self.assertFalse(out)
+
+    def test_is_css_color_like_true(self):
+        for test_arg in [*valid_hex_colors, *valid_css_rgb_colors]:
+            out = color_util.is_css_color_like(test_arg)
+            self.assertTrue(out)
+
+    def test_is_css_color_like_false(self):
+        test_args = list(invalid_colors)
+
+        # Checking for this in our code is not worth the cost.
+        test_args.remove("#0z0")
+
+        # This is only unsupported as user input, but it its used internally.
+        test_args.remove("rgb(1, 2, 3)")
+
+        for test_arg in test_args:
+            out = color_util.is_css_color_like(test_arg)
             self.assertFalse(out)
 
     def test_is_color_tuple_like_true(self):
@@ -162,6 +186,9 @@ class ColorUtilTest(unittest.TestCase):
 
         # Checking for this in our code is not worth the cost.
         test_args.remove("#0z0")
+
+        # This is only unsupported as user input, but it its used internally.
+        test_args.remove("rgb(1, 2, 3)")
 
         for test_arg in test_args:
             out = color_util.is_color_like(test_arg)

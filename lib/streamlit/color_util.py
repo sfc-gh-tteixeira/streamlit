@@ -60,16 +60,14 @@ def to_int_color_tuple(color: MaybeColor) -> IntColorTuple:
 
 
 def to_css_color(color: MaybeColor) -> Color:
-    """Convert input into a CSS-compatible color.
+    """Convert input into a CSS-compatible color that Vega can use.
 
-    NOTE: We *do not* support all CSS-compatible strings as input.
-
-    Inputs must be a hex string or a color tuple. Inputs may not be a CSS
-    color name, a CSS color function (like "rgb(...)"), etc.
+    Inputs must be a hex string, rgb()/rgba() string, or a color tuple. Inputs may not be a CSS
+    color name, other CSS color function (like "hsl(...)"), etc.
 
     See tests for more info.
     """
-    if is_hex_color_like(color):
+    if is_css_color_like(color):
         return color
 
     if is_color_tuple_like(color):
@@ -82,11 +80,23 @@ def to_css_color(color: MaybeColor) -> Color:
     raise InvalidColorException(color)
 
 
-def is_hex_color_like(color: MaybeColor) -> bool:
-    """A fairly lightweight check of whether the input is a hex string color.
+def is_css_color_like(color: MaybeColor) -> bool:
+    """Check whether the input looks like something to_css_color() can produce.
 
-    This isn't meant to be a definitive answer. The definitive solution is to
-    try to convert and see if an error is thrown.
+    This is meant to be lightweight, and not a definitive answer. The definitive solution is to try
+    to convert and see if an error is thrown.
+    """
+    return is_hex_color_like(color) or _is_cssrgb_color_like(color)
+
+
+def is_hex_color_like(color: MaybeColor) -> bool:
+    """Check whether the input looks like a hex color.
+
+    NOTE: We only accept hex colors and color tuples as user input. So you should use
+    is_hex_color_like and is_color_tuple_like whenever checking your inputs.
+
+    This is meant to be lightweight, and not a definitive answer. The definitive solution is to try
+    to convert and see if an error is thrown.
     """
     return (
         isinstance(color, str)
@@ -96,11 +106,28 @@ def is_hex_color_like(color: MaybeColor) -> bool:
     )
 
 
-def is_color_tuple_like(color: MaybeColor) -> bool:
-    """A fairly lightweight check of whether the input is a tuple color.
+def _is_cssrgb_color_like(color: MaybeColor) -> bool:
+    """Check whether the input looks like a CSS rgb() or rgba() color string.
 
-    This isn't meant to be a definitive answer. The definitive solution is to
-    try to convert and see if an error is thrown.
+    NOTE: We only accept hex colors and color tuples as user input. So you should use
+    is_hex_color_like and is_color_tuple_like whenever checking your inputs.
+
+    This is meant to be lightweight, and not a definitive answer. The definitive solution is to try
+    to convert and see if an error is thrown.
+    """
+    return isinstance(color, str) and (
+        color.startswith("rgb(") or color.startswith("rgba(")
+    )
+
+
+def is_color_tuple_like(color: MaybeColor) -> bool:
+    """Check whether the input looks like a tuple color.
+
+    NOTE: We only accept hex colors and color tuples as user input. So you should use
+    is_hex_color_like and is_color_tuple_like whenever checking your inputs.
+
+    This is meant to be lightweight, and not a definitive answer. The definitive solution is to try
+    to convert and see if an error is thrown.
     """
     return (
         isinstance(color, (tuple, list))
@@ -115,7 +142,7 @@ def is_color_like(color: MaybeColor) -> bool:
     This isn't meant to be a definitive answer. The definitive solution is to
     try to convert and see if an error is thrown.
     """
-    return is_hex_color_like(color) or is_color_tuple_like(color)
+    return is_css_color_like(color) or is_color_tuple_like(color)
 
 
 # Wrote our own hex-to-tuple parser to avoid bringing in a dependency.
@@ -124,7 +151,7 @@ def _to_color_tuple(
     rgb_formatter: Callable[[float], float],
     alpha_formatter: Callable[[float], float],
 ):
-    if is_hex_color_like(color):
+    if is_css_color_like(color):
         hex_len = len(color)
 
         if hex_len == 4:

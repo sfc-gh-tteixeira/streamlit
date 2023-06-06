@@ -43,6 +43,7 @@ from streamlit.color_util import (
     Color,
     is_color_like,
     is_color_tuple_like,
+    is_css_color_like,
     is_hex_color_like,
     to_css_color,
 )
