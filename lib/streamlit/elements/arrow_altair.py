@@ -1216,7 +1216,7 @@ def _get_color_enc(
 ) -> alt.Color:
     import altair as alt
 
-    # Nothing to do here...
+    # If not color, nothing to do here.
     if color_value is None and color_column is None:
         return None
 
@@ -1226,9 +1226,9 @@ def _get_color_enc(
 
         # If the color value is color-like, return that.
         if is_color_like(color_value):
-            return alt.ColorValue(to_css_color(color_value)), False
+            return alt.ColorValue(to_css_color(color_value))
 
-        # If the color value is a list of colors, return that.
+        # If the color value is a list of colors of approriate length, return that.
         elif isinstance(color_value, (list, tuple)):
             if len(color_value) != len(y_columns):
                 raise StreamlitAPIException(
