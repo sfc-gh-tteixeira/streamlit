@@ -23,6 +23,7 @@ import pytest
 
 import streamlit
 from streamlit.delta_generator import DeltaGenerator
+from streamlit.errors import StreamlitAPIException
 from tests.streamlit import pyspark_mocks
 from tests.streamlit.snowpark_mocks import DataFrame as MockSnowparkDataFrame
 from tests.streamlit.snowpark_mocks import Table as MockSnowparkTable
@@ -159,6 +160,7 @@ class DataFrameSelectorTest(unittest.TestCase):
             DATAFRAME,
             x=None,
             y=None,
+            color=None,
             width=100,
             height=200,
             use_container_width=True,
@@ -184,6 +186,7 @@ class DataFrameSelectorTest(unittest.TestCase):
             DATAFRAME,
             x=None,
             y=None,
+            color=None,
             width=100,
             height=200,
             use_container_width=True,
@@ -209,6 +212,33 @@ class DataFrameSelectorTest(unittest.TestCase):
             DATAFRAME,
             x=None,
             y=None,
+            color=None,
+            width=100,
+            height=200,
+            use_container_width=True,
+        )
+
+    @patch.object(DeltaGenerator, "_arrow_scatter_chart")
+    @patch_config_options({"global.dataFrameSerialization": "legacy"})
+    def test_legacy_scatter_chart(self, arrow_scatter_chart):
+        with self.assertRaises(StreamlitAPIException):
+            streamlit.scatter_chart(
+                DATAFRAME, width=100, height=200, use_container_width=True
+            )
+        arrow_scatter_chart.assert_not_called()
+
+    @patch.object(DeltaGenerator, "_arrow_scatter_chart")
+    @patch_config_options({"global.dataFrameSerialization": "arrow"})
+    def test_arrow_scatter_chart(self, arrow_scatter_chart):
+        streamlit.scatter_chart(
+            DATAFRAME, width=100, height=200, use_container_width=True
+        )
+        arrow_scatter_chart.assert_called_once_with(
+            DATAFRAME,
+            x=None,
+            y=None,
+            color=None,
+            size=None,
             width=100,
             height=200,
             use_container_width=True,

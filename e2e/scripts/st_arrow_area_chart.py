@@ -23,12 +23,83 @@ np.random.seed(0)
 data = np.random.randn(20, 3)
 df = pd.DataFrame(data, columns=["a", "b", "c"])
 
+# Pulled ito a separate df because this doesn't make sense for certain charts.
+df2 = df.copy()
+df2["e"] = ["bird" if x % 2 else "airplane" for x in range(20)]
+
+"""
+### Wide dataframe with x and y implicitly set
+
+Should show 3 series.
+"""
 st._arrow_area_chart(df)
+
+"""
+### Wide dataframe with explicit x and implicit y
+
+Should show 2 series.
+"""
 st._arrow_area_chart(df, x="a")
+
+"""
+### Wide dataframe with implicit x and explicit y
+
+Should show 1 series.
+"""
 st._arrow_area_chart(df, y="a")
+
+"""
+### Wide dataframe with implicit x and explicit y list
+
+Should show 2 series.
+"""
 st._arrow_area_chart(df, y=["a", "b"])
+
+"""
+### Wide dataframe with explicit x and explicit y
+
+Should show 1 series.
+"""
 st._arrow_area_chart(df, x="a", y="b")
+
+"""
+### Wide dataframe with explicit x and explicit y
+
+Should show 1 series.
+"""
 st._arrow_area_chart(df, x="b", y="a")
+
+"""
+### Wide dataframe with explicit x and explicit y list
+
+Should show 2 series.
+"""
 st._arrow_area_chart(df, x="a", y=["b", "c"])
 
+"""
+### Snowpark dataframe
+
+Should show 4 series
+"""
 st._arrow_area_chart(snowpark_mocks.DataFrame())
+
+"""
+### Wide dataframe with color sequence
+
+Should show 2 series, in orange and green
+"""
+st._arrow_area_chart(df, x="a", y=["b", "c"], color=["#e60", "#4f2"])
+
+"""
+### Wide dataframe with color value
+
+Should show 1 series, in orange
+"""
+st._arrow_area_chart(df, x="a", y="b", color="#e60")
+
+"""
+### Wide dataframe with nominal color column
+
+Should show 2 series, called 'airplane' and 'bird', with default colors
+"""
+st._arrow_area_chart(df2, x="a", y="b", color="e")

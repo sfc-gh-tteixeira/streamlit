@@ -19,6 +19,7 @@ import pandas as pd
 import streamlit as st
 
 df = pd.DataFrame({"a": [1, 2], "b": [3, 4], "c": [5, 6]})
+df2 = pd.DataFrame({"a": [3, 4], "b": [3, 4], "c": [5, 6]})
 
 table_element = st._arrow_table(df)
 dataframe_element = st._arrow_dataframe(df)
@@ -70,10 +71,10 @@ table_element._arrow_add_rows(df)
 dataframe_element._arrow_add_rows(df)
 chart_element_1._arrow_add_rows(df)
 chart_element_2._arrow_add_rows(df)
-vega_element_1._arrow_add_rows(df)
-vega_element_2._arrow_add_rows(df)
-vega_element_3._arrow_add_rows(foo=df)
-altair_element._arrow_add_rows(df)
+vega_element_1._arrow_add_rows(df2)
+vega_element_2._arrow_add_rows(df2)
+vega_element_3._arrow_add_rows(foo=df2)
+altair_element._arrow_add_rows(df2)
 
 # Test that `_arrow_add_rows` errors out when the dataframe dimensions don't match.
 # This should show an error!

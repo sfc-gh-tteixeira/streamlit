@@ -80,7 +80,7 @@ class ArrowAltairTest(DeltaGeneratorTestCase):
             {"index": [date(2019, 8, 9), date(2019, 8, 10)], "numbers": [1, 10]}
         ).set_index("index")
 
-        chart = altair._generate_chart(ChartType.LINE, df)
+        chart, _ = altair._generate_chart(ChartType.LINE, df)
         st._arrow_altair_chart(chart)
         proto = self.get_delta_from_queue().new_element.arrow_vega_lite_chart
         spec_dict = json.loads(proto.spec)
@@ -105,7 +105,7 @@ class ArrowAltairTest(DeltaGeneratorTestCase):
             {"index": [date(2019, 8, 9), date(2019, 8, 10)], "numbers": [1, 10]}
         ).set_index("index")
 
-        chart = altair._generate_chart(ChartType.LINE, df)
+        chart, _ = altair._generate_chart(ChartType.LINE, df)
         st._arrow_altair_chart(chart, theme=theme_value)
 
         el = self.get_delta_from_queue().new_element
@@ -116,7 +116,7 @@ class ArrowAltairTest(DeltaGeneratorTestCase):
             {"index": [date(2019, 8, 9), date(2019, 8, 10)], "numbers": [1, 10]}
         ).set_index("index")
 
-        chart = altair._generate_chart(ChartType.LINE, df)
+        chart, _ = altair._generate_chart(ChartType.LINE, df)
         with self.assertRaises(StreamlitAPIException) as exc:
             st._arrow_altair_chart(chart, theme="bad_theme")
 
@@ -133,9 +133,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         """Test st._arrow_line_chart."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         EXPECTED_DATAFRAME = pd.DataFrame(
-            [[0, "a", 20], [0, "b", 30], [0, "c", 50]],
-            index=[0, 1, 2],
-            columns=["index", "variable", "value"],
+            [[0, 20, 30, 50]], columns=["index-4FLV4aXfCWIrl1KyIeJp", "a", "b", "c"]
         )
 
         st._arrow_line_chart(df, width=640, height=480)
@@ -155,6 +153,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
             (st._arrow_area_chart, "area"),
             (st._arrow_bar_chart, "bar"),
             (st._arrow_line_chart, "line"),
+            (st._arrow_scatter_chart, "circle"),
         ]
     )
     def test_arrow_chart_with_x_y(self, chart_command: Callable, altair_type: str):
@@ -182,6 +181,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
             (st._arrow_area_chart, "area"),
             (st._arrow_bar_chart, "bar"),
             (st._arrow_line_chart, "line"),
+            (st._arrow_scatter_chart, "circle"),
         ]
     )
     def test_arrow_chart_with_x_y_sequence(
@@ -189,9 +189,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
     ):
         """Test x/y-sequence support for built-in charts."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
-        EXPECTED_DATAFRAME = pd.DataFrame(
-            [[20, "b", 30], [20, "c", 50]], columns=["a", "variable", "value"]
-        )
+        EXPECTED_DATAFRAME = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
 
         chart_command(df, x="a", y=["b", "c"])
 
@@ -199,13 +197,180 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         chart_spec = json.loads(proto.spec)
 
         self.assertIn(chart_spec["mark"], [altair_type, {"type": altair_type}])
+
         self.assertEqual(chart_spec["encoding"]["x"]["field"], "a")
-        self.assertEqual(chart_spec["encoding"]["y"]["field"], "value")
+
+        # When y is a sequence, we tell Vega Lite to melt the data from wide to long format in the
+        # frontend by using transforms.
+        self.assertEqual(chart_spec["transform"][0]["fold"], ["b", "c"])
+        self.assertEqual(
+            chart_spec["transform"][0]["as"],
+            ["color-xWSR9VDwhyLw5IHyGvPX", "values-7hbjwi6ywufr4T3VmvRh"],
+        )
+
+        # The melted 'y' field should have a unique name we hardcoded.
+        self.assertEqual(
+            chart_spec["encoding"]["y"]["field"], "values-7hbjwi6ywufr4T3VmvRh"
+        )
+
+        # The melted 'color' field should have a unique name we hardcoded.
+        self.assertEqual(
+            chart_spec["encoding"]["color"]["field"], "color-xWSR9VDwhyLw5IHyGvPX"
+        )
 
         pd.testing.assert_frame_equal(
             bytes_to_data_frame(proto.datasets[0].data.data),
             EXPECTED_DATAFRAME,
         )
+
+    @parameterized.expand(
+        [
+            (st._arrow_area_chart, "area"),
+            (st._arrow_bar_chart, "bar"),
+            (st._arrow_line_chart, "line"),
+            (st._arrow_scatter_chart, "circle"),
+        ]
+    )
+    def test_arrow_chart_with_color_value(
+        self, chart_command: Callable, altair_type: str
+    ):
+        """Test color support for built-in charts."""
+        df = pd.DataFrame([[20, 30]], columns=["a", "b"])
+        EXPECTED_DATAFRAME = pd.DataFrame([[20, 30]], columns=["a", "b"])
+
+        chart_command(df, x="a", y="b", color="#f00")
+
+        proto = self.get_delta_from_queue().new_element.arrow_vega_lite_chart
+        chart_spec = json.loads(proto.spec)
+
+        self.assertEqual(chart_spec["encoding"]["color"]["value"], "#f00")
+
+    @parameterized.expand(
+        [
+            (st._arrow_area_chart, "area"),
+            (st._arrow_bar_chart, "bar"),
+            (st._arrow_line_chart, "line"),
+            (st._arrow_scatter_chart, "circle"),
+        ]
+    )
+    def test_arrow_chart_with_color_column(
+        self, chart_command: Callable, altair_type: str
+    ):
+        """Test color support for built-in charts."""
+        df = pd.DataFrame(
+            {
+                "x": [0, 1, 2],
+                "y": [22, 21, 20],
+                "tuple3_int_color": [[255, 0, 0], [0, 255, 0], [0, 0, 255]],
+                "tuple4_int_int_color": [
+                    [255, 0, 0, 51],
+                    [0, 255, 0, 51],
+                    [0, 0, 255, 51],
+                ],
+                "tuple4_int_float_color": [
+                    [255, 0, 0, 0.2],
+                    [0, 255, 0, 0.2],
+                    [0, 0, 255, 0.2],
+                ],
+                "tuple3_float_color": [
+                    [1.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 0.0, 1.0],
+                ],
+                "tuple4_float_float_color": [
+                    [1.0, 0.0, 0.0, 0.2],
+                    [0.0, 1.0, 0.0, 0.2],
+                    [0.0, 0.0, 1.0, 0.2],
+                ],
+                "hex3_color": ["#f00", "#0f0", "#00f"],
+                "hex4_color": ["#f008", "#0f08", "#00f8"],
+                "hex6_color": ["#ff0000", "#00ff00", "#0000ff"],
+                "hex8_color": ["#ff000088", "#00ff0088", "#0000ff88"],
+            }
+        )
+
+        color_columns = sorted(set(df.columns))
+        color_columns.remove("x")
+        color_columns.remove("y")
+
+        expected_values = pd.DataFrame(
+            {
+                "tuple3": ["rgb(255, 0, 0)", "rgb(0, 255, 0)", "rgb(0, 0, 255)"],
+                "tuple4": [
+                    "rgba(255, 0, 0, 0.2)",
+                    "rgba(0, 255, 0, 0.2)",
+                    "rgba(0, 0, 255, 0.2)",
+                ],
+                "hex3": ["#f00", "#0f0", "#00f"],
+                "hex6": ["#ff0000", "#00ff00", "#0000ff"],
+                "hex4": ["#f008", "#0f08", "#00f8"],
+                "hex8": ["#ff000088", "#00ff0088", "#0000ff88"],
+            }
+        )
+
+        def get_expected_color_values(col_name):
+            for prefix, expected_color_values in expected_values.items():
+                if col_name.startswith(prefix):
+                    return expected_color_values
+
+        for color_column in color_columns:
+            expected_color_values = get_expected_color_values(color_column)
+
+            chart_command(df, x="x", y="y", color=color_column)
+
+            proto = self.get_delta_from_queue().new_element.arrow_vega_lite_chart
+            chart_spec = json.loads(proto.spec)
+
+            self.assertEqual(chart_spec["encoding"]["color"]["field"], color_column)
+
+            # Manually-specified colors should not have a legend
+            self.assertEqual(chart_spec["encoding"]["color"]["legend"], None)
+
+            # Manually-specified colors are set via the color scale's range property.
+            self.assertTrue(chart_spec["encoding"]["color"]["scale"]["range"])
+
+            proto_df = bytes_to_data_frame(proto.datasets[0].data.data)
+
+            pd.testing.assert_series_equal(
+                proto_df[color_column],
+                expected_color_values,
+                check_names=False,
+            )
+
+    @parameterized.expand(
+        [
+            (st._arrow_area_chart, "area"),
+            (st._arrow_bar_chart, "bar"),
+            (st._arrow_line_chart, "line"),
+            (st._arrow_scatter_chart, "circle"),
+        ]
+    )
+    def test_arrow_chart_with_x_y_sequence_and_color_sequence(
+        self, chart_command: Callable, altair_type: str
+    ):
+        """Test color support for built-in charts."""
+        df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
+        EXPECTED_DATAFRAME = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
+
+        chart_command(df, x="a", y=["b", "c"], color=["#f00", "#0ff"])
+
+        proto = self.get_delta_from_queue().new_element.arrow_vega_lite_chart
+        chart_spec = json.loads(proto.spec)
+
+        self.assertIn(chart_spec["mark"], [altair_type, {"type": altair_type}])
+
+        # Color should be set to the melted column name.
+        self.assertEqual(
+            chart_spec["encoding"]["color"]["field"], "color-xWSR9VDwhyLw5IHyGvPX"
+        )
+
+        # Automatically-specified colors should have no legend title.
+        self.assertEqual(chart_spec["encoding"]["color"]["title"], " ")
+
+        # Automatically-specified colors should have a legend
+        self.assertNotEqual(chart_spec["encoding"]["color"]["legend"], None)
+
+        bytes_to_data_frame(proto.datasets[0].data.data)
 
     @parameterized.expand(
         [
@@ -256,10 +421,11 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         """Test st._arrow_line_chart with a generic index."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         df.set_index("a", inplace=True)
+
         EXPECTED_DATAFRAME = pd.DataFrame(
-            [[20, "b", 30], [20, "c", 50]],
-            index=[0, 1],
-            columns=["a", "variable", "value"],
+            [[20, 30, 50]],
+            columns=["index-4FLV4aXfCWIrl1KyIeJp", "b", "c"],
+            index=pd.RangeIndex(0, 1, 1),
         )
 
         st._arrow_line_chart(df)
@@ -276,9 +442,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         """Test st._arrow_area_chart."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         EXPECTED_DATAFRAME = pd.DataFrame(
-            [[0, "a", 20], [0, "b", 30], [0, "c", 50]],
-            index=[0, 1, 2],
-            columns=["index", "variable", "value"],
+            [[0, 20, 30, 50]],
+            columns=["index-4FLV4aXfCWIrl1KyIeJp", "a", "b", "c"],
         )
 
         st._arrow_area_chart(df)
@@ -295,9 +460,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         """Test st._arrow_bar_chart."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         EXPECTED_DATAFRAME = pd.DataFrame(
-            [[0, "a", 20], [0, "b", 30], [0, "c", 50]],
-            index=[0, 1, 2],
-            columns=["index", "variable", "value"],
+            [[0, 20, 30, 50]],
+            columns=["index-4FLV4aXfCWIrl1KyIeJp", "a", "b", "c"],
         )
 
         st._arrow_bar_chart(df, width=640, height=480)
@@ -308,6 +472,67 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         self.assertIn(chart_spec["mark"], ["bar", {"type": "bar"}])
         self.assertEqual(chart_spec["width"], 640)
         self.assertEqual(chart_spec["height"], 480)
+        pd.testing.assert_frame_equal(
+            bytes_to_data_frame(proto.datasets[0].data.data),
+            EXPECTED_DATAFRAME,
+        )
+
+    def test_arrow_scatter_chart(self):
+        """Test st._arrow_scatter_chart."""
+        df = pd.DataFrame([[20, 30, 50, 60]], columns=["a", "b", "c", "d"])
+        EXPECTED_DATAFRAME = pd.DataFrame(
+            [[0, 60, 20, 30, 50]],
+            columns=["index-4FLV4aXfCWIrl1KyIeJp", "d", "a", "b", "c"],
+        )
+
+        st._arrow_scatter_chart(df, size="d")
+
+        proto = self.get_delta_from_queue().new_element.arrow_vega_lite_chart
+        chart_spec = json.loads(proto.spec)
+
+        self.assertIn(chart_spec["mark"], ["circle", {"type": "circle"}])
+
+        self.assertEqual(chart_spec["encoding"]["size"]["field"], "d")
+
+        pd.testing.assert_frame_equal(
+            bytes_to_data_frame(proto.datasets[0].data.data),
+            EXPECTED_DATAFRAME,
+        )
+
+    @parameterized.expand(
+        [
+            (st._arrow_area_chart, "area"),
+            (st._arrow_bar_chart, "bar"),
+            (st._arrow_line_chart, "line"),
+            (st._arrow_scatter_chart, "circle"),
+        ]
+    )
+    def test_unused_columns_are_dropped(
+        self, chart_command: Callable, altair_type: str
+    ):
+        """Test built-in charts drop columns that are not used."""
+
+        df = pd.DataFrame(
+            [[5, 10, 20, 30, 35, 40, 50, 60]],
+            columns=["z", "a", "b", "c", "x", "d", "e", "f"],
+        )
+
+        if chart_command == st._arrow_scatter_chart:
+            chart_command(df, x="a", y=["b", "c"], color="d", size="e")
+            EXPECTED_DATAFRAME = pd.DataFrame(
+                [[10, 40, 50, 20, 30]], columns=["a", "d", "e", "b", "c"]
+            )
+        else:
+            chart_command(df, x="a", y=["b", "c"], color="d")
+            EXPECTED_DATAFRAME = pd.DataFrame(
+                [[10, 40, 20, 30]], columns=["a", "d", "b", "c"]
+            )
+
+        proto = self.get_delta_from_queue().new_element.arrow_vega_lite_chart
+        json.loads(proto.spec)
+
+        bytes_to_data_frame(proto.datasets[0].data.data)
+
         pd.testing.assert_frame_equal(
             bytes_to_data_frame(proto.datasets[0].data.data),
             EXPECTED_DATAFRAME,
