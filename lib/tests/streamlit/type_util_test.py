@@ -255,6 +255,15 @@ class TypeUtilTest(unittest.TestCase):
         self.assertNotEqual(id(original_df), id(out))
         pd.testing.assert_frame_equal(original_df, out)
 
+    def test_convert_anything_to_df_calls_to_pandas_when_available(self):
+        class DataFrameIsh:
+            def to_pandas(self):
+                return pd.DataFrame([])
+
+        converted = convert_anything_to_df(DataFrameIsh())
+        assert isinstance(converted, pd.DataFrame)
+        assert converted.empty
+
     @parameterized.expand(
         [
             # Complex numbers:
