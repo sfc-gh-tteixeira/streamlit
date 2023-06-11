@@ -36,11 +36,12 @@ from typing_extensions import Final, Literal
 from streamlit import config, cursor, env_util, logger, runtime, type_util, util
 from streamlit.cursor import Cursor
 from streamlit.elements.alert import AlertMixin
+from streamlit.elements.altair_utils import ChartInfo
 
 # DataFrame elements come in two flavors: "Legacy" and "Arrow".
 # We select between them with the DataFrameElementSelectorMixin.
 from streamlit.elements.arrow import ArrowMixin
-from streamlit.elements.arrow_altair import ArrowAltairMixin
+from streamlit.elements.arrow_altair import ArrowAltairMixin, prep_data
 from streamlit.elements.arrow_vega_lite import ArrowVegaLiteMixin
 from streamlit.elements.balloons import BalloonsMixin
 from streamlit.elements.bokeh_chart import BokehMixin
@@ -63,7 +64,7 @@ from streamlit.elements.iframe import IframeMixin
 from streamlit.elements.image import ImageMixin
 from streamlit.elements.json import JsonMixin
 from streamlit.elements.layouts import LayoutsMixin
-from streamlit.elements.legacy_altair import LegacyAltairMixin
+from streamlit.elements.legacy_altair import ArrowNotSupportedError, LegacyAltairMixin
 from streamlit.elements.legacy_data_frame import LegacyDataFrameMixin
 from streamlit.elements.legacy_vega_lite import LegacyVegaLiteMixin
 from streamlit.elements.map import MapMixin
@@ -111,6 +112,7 @@ ARROW_DELTA_TYPES_THAT_MELT_DATAFRAMES: Final = (
     "arrow_line_chart",
     "arrow_area_chart",
     "arrow_bar_chart",
+    "arrow_scatter_chart",
 )
 
 Value = TypeVar("Value")
@@ -413,7 +415,7 @@ class DeltaGenerator(
         delta_type: str,
         element_proto: Message,
         return_value: None,
-        last_index: Hashable | None = None,
+        chart_info: Optional[ChartInfo] = None,
         element_width: int | None = None,
         element_height: int | None = None,
     ) -> DeltaGenerator:
@@ -425,7 +427,7 @@ class DeltaGenerator(
         delta_type: str,
         element_proto: Message,
         return_value: Type[NoValue],
-        last_index: Hashable | None = None,
+        chart_info: Optional[ChartInfo] = None,
         element_width: int | None = None,
         element_height: int | None = None,
     ) -> None:
@@ -437,7 +439,7 @@ class DeltaGenerator(
         delta_type: str,
         element_proto: Message,
         return_value: Value,
-        last_index: Hashable | None = None,
+        chart_info: Optional[ChartInfo] = None,
         element_width: int | None = None,
         element_height: int | None = None,
     ) -> Value:
@@ -449,7 +451,7 @@ class DeltaGenerator(
         delta_type: str,
         element_proto: Message,
         return_value: None = None,
-        last_index: Hashable | None = None,
+        chart_info: Optional[ChartInfo] = None,
         element_width: int | None = None,
         element_height: int | None = None,
     ) -> DeltaGenerator:
@@ -461,7 +463,7 @@ class DeltaGenerator(
         delta_type: str,
         element_proto: Message,
         return_value: Type[NoValue] | Value | None = None,
-        last_index: Hashable | None = None,
+        chart_info: Optional[ChartInfo] = None,
         element_width: int | None = None,
         element_height: int | None = None,
     ) -> DeltaGenerator | Value | None:
@@ -472,7 +474,7 @@ class DeltaGenerator(
         delta_type: str,
         element_proto: Message,
         return_value: Type[NoValue] | Value | None = None,
-        last_index: Hashable | None = None,
+        chart_info: Optional[ChartInfo] = None,
         element_width: int | None = None,
         element_height: int | None = None,
     ) -> DeltaGenerator | Value | None:
@@ -545,7 +547,7 @@ class DeltaGenerator(
             # position.
             new_cursor = (
                 dg._cursor.get_locked_cursor(
-                    delta_type=delta_type, last_index=last_index
+                    delta_type=delta_type, chart_info=chart_info
                 )
                 if dg._cursor is not None
                 else None
@@ -629,7 +631,7 @@ class DeltaGenerator(
         block_dg._form_data = FormData(current_form_id(dg))
 
         # Must be called to increment this cursor's index.
-        dg._cursor.get_locked_cursor(last_index=None)
+        dg._cursor.get_locked_cursor(chart_info=None)
         _enqueue_message(msg)
 
         caching.save_block_message(
@@ -724,12 +726,16 @@ class DeltaGenerator(
                 "Command requires exactly one dataset"
             )
 
+        # The legacy add_rows does not support Arrow tables.
+        if type_util.is_type(data, "pyarrow.lib.Table"):
+            raise ArrowNotSupportedError()
+
         # When doing _legacy_add_rows on an element that does not already have data
         # (for example, st._legacy_line_chart() without any args), call the original
         # st._legacy_foo() element with new data instead of doing a _legacy_add_rows().
         if (
             self._cursor.props["delta_type"] in DELTA_TYPES_THAT_MELT_DATAFRAMES
-            and self._cursor.props["last_index"] is None
+            and self._cursor.props["chart_info"].last_index is None
         ):
             # IMPORTANT: This assumes delta types and st method names always
             # match!
@@ -739,8 +745,11 @@ class DeltaGenerator(
             st_method(data, **kwargs)
             return None
 
-        data, self._cursor.props["last_index"] = _maybe_melt_data_for_add_rows(
-            data, self._cursor.props["delta_type"], self._cursor.props["last_index"]
+        data, self._cursor.props["chart_info"] = _prep_data_for_add_rows(
+            data,
+            self._cursor.props["delta_type"],
+            self._cursor.props["chart_info"],
+            is_arrow=False,
         )
 
         msg = ForwardMsg_pb2.ForwardMsg()
@@ -845,7 +854,7 @@ class DeltaGenerator(
         # st._arrow_foo() element with new data instead of doing a _arrow_add_rows().
         if (
             self._cursor.props["delta_type"] in ARROW_DELTA_TYPES_THAT_MELT_DATAFRAMES
-            and self._cursor.props["last_index"] is None
+            and self._cursor.props["chart_info"].last_index is None
         ):
             # IMPORTANT: This assumes delta types and st method names always
             # match!
@@ -855,8 +864,11 @@ class DeltaGenerator(
             st_method(data, **kwargs)
             return None
 
-        data, self._cursor.props["last_index"] = _maybe_melt_data_for_add_rows(
-            data, self._cursor.props["delta_type"], self._cursor.props["last_index"]
+        data, self._cursor.props["chart_info"] = _prep_data_for_add_rows(
+            data,
+            self._cursor.props["delta_type"],
+            self._cursor.props["chart_info"],
+            is_arrow=True,
         )
 
         msg = ForwardMsg_pb2.ForwardMsg()
@@ -879,14 +891,24 @@ class DeltaGenerator(
 DFT = TypeVar("DFT", bound=type_util.DataFrameCompatible)
 
 
-def _maybe_melt_data_for_add_rows(
+def _prep_data_for_add_rows(
     data: DFT,
     delta_type: str,
-    last_index: Any,
+    chart_info: ChartInfo,
+    is_arrow: bool,
 ) -> tuple[DFT | DataFrame, int | Any]:
     import pandas as pd
 
-    def _melt_data(df: DataFrame, last_index: Any) -> tuple[DataFrame, int | Any]:
+    df = type_util.convert_anything_to_df(data, allow_styler=True)
+
+    # For some delta types we have to reshape the data structure
+    # otherwise the input data and the actual data used
+    # by vega_lite will be different, and it will throw an error.
+    if (
+        delta_type in DELTA_TYPES_THAT_MELT_DATAFRAMES
+        or delta_type in ARROW_DELTA_TYPES_THAT_MELT_DATAFRAMES
+    ):
+        # Make range indices start at last_index.
         if isinstance(df.index, pd.RangeIndex):
             old_step = _get_pandas_index_attr(df, "step")
 
@@ -900,35 +922,22 @@ def _maybe_melt_data_for_add_rows(
                     "'RangeIndex' object has no attribute 'step'"
                 )
 
-            start = last_index + old_step
-            stop = last_index + old_step + old_stop
+            start = chart_info.last_index + old_step
+            stop = chart_info.last_index + old_step + old_stop
 
             df.index = pd.RangeIndex(start=start, stop=stop, step=old_step)
-            last_index = stop - 1
+            chart_info.last_index = stop - 1
 
-        index_name = df.index.name
-        if index_name is None:
-            index_name = "index"
-
-        df = pd.melt(df.reset_index(), id_vars=[index_name])
-        return df, last_index
-
-    # For some delta types we have to reshape the data structure
-    # otherwise the input data and the actual data used
-    # by vega_lite will be different, and it will throw an error.
-    if (
-        delta_type in DELTA_TYPES_THAT_MELT_DATAFRAMES
-        or delta_type in ARROW_DELTA_TYPES_THAT_MELT_DATAFRAMES
-    ):
-        if not isinstance(data, pd.DataFrame):
-            return _melt_data(
-                df=type_util.convert_anything_to_df(data),
-                last_index=last_index,
-            )
+        if is_arrow:
+            df, _, _, _, _ = prep_data(df, **chart_info.columns)
         else:
-            return _melt_data(df=data, last_index=last_index)
+            index_name = df.index.name
+            if index_name is None:
+                index_name = "index"
 
-    return data, last_index
+            df = pd.melt(df.reset_index(), id_vars=[index_name])
+
+    return df, chart_info
 
 
 def _get_pandas_index_attr(
