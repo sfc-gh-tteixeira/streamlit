@@ -929,7 +929,7 @@ def _prep_data_for_add_rows(
             chart_info.last_index = stop - 1
 
         if is_arrow:
-            df, _ = prep_data(df, **chart_info.columns)
+            df, _, _, _, _ = prep_data(df, **chart_info.columns)
         else:
             index_name = df.index.name
             if index_name is None:

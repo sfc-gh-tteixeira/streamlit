@@ -62,7 +62,7 @@ line.
 st._arrow_scatter_chart(df, x="b", y="a")
 
 """
-### Wide dataframe with implicity x and explicit y list
+### Wide dataframe with implicit x and explicit y list
 
 There should be 2 series. x should be in [0, 20] and there should be a decreasing line.
 """
@@ -100,7 +100,7 @@ st._arrow_scatter_chart(df, x="a", y="b", size="c", color="c")
 """
 ### Some long component is the same as a some wide component
 
-Should show 2 series, where 1 is an x=y line from -20 to 0.
+Should show 2 series, where one is an x=y line from -20 to 0.
 """
 st._arrow_scatter_chart(df, x="a", y=["a", "c"])
 
@@ -124,17 +124,9 @@ Should show 2 series (in orange and green) with circles of varying sizes.
 st._arrow_scatter_chart(df, x="a", y=["b", "c"], color=["#e60", "#4f2"], size="d")
 
 """
-### Columns with nominal colors
+### Columns with nominal color column
 
-Should show two 2 using the default colors, with circles of varying
+Should show two series using the default colors, with circles of varying
 sizes.
 """
 st._arrow_scatter_chart(df2, x="a", y="b", color="e", size="d")
-
-"""
-### Columns with color values
-
-Should show 2 series (red and blue), with circles of varying sizes and no
-color legend.
-"""
-st._arrow_scatter_chart(df2, x="a", y="b", color="f", size="d")

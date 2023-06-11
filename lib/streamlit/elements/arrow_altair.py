@@ -808,7 +808,7 @@ def prep_data(
     y_columns: List[str],
     color_column: Optional[str],
     size_column: Optional[str],
-) -> Tuple[pd.DataFrame, str]:
+) -> Tuple[pd.DataFrame, str, List[str], Optional[str], Optional[str]]:
     """Prepares the data for charting.
 
     Does a few things:
@@ -816,8 +816,8 @@ def prep_data(
     * Resets the index if needed
     * Removes unnecessary columns
 
-    Returns the prepared dataframe and the new name of the x_column (taking the index reset into
-    consideration).
+    Returns the prepared dataframe and the new names of the x column (taking the index reset into
+    consideration) and y, color, and size columns (converting to str if needed).
     """
 
     # Check the data for correctness.
@@ -841,13 +841,8 @@ def prep_data(
         data = data.reset_index(names=x_column)
 
     # Drop columns we're not using.
-    # (Sort for tests)
-    used_columns = sorted(
-        [
-            c
-            for c in set([x_column, color_column, size_column, *y_columns])
-            if c is not None
-        ]
+    used_columns = _dedupe_and_remove_none(
+        x_column, color_column, size_column, *y_columns
     )
     selected_data = data[used_columns]
 
@@ -870,8 +865,12 @@ def prep_data(
     # pyarrow.lib.ArrowTypeError: "Expected a <TYPE> object, got a object".
     prepped_data = type_util.fix_arrow_incompatible_column_types(selected_data)
 
+    x_column, y_columns, color_column, size_column = _prepare_column_names(
+        prepped_data, x_column, y_columns, color_column, size_column
+    )
+
     # Return the data, but also the new names to use for x, y, and color.
-    return prepped_data, x_column
+    return prepped_data, x_column, y_columns, color_column, size_column
 
 
 def _generate_chart(
@@ -909,7 +908,9 @@ def _generate_chart(
     # At this point, all foo_column variables are either None or actual columns that are guaranteed
     # to exist.
 
-    data, x_column = prep_data(data, x_column, y_columns, color_column, size_column)
+    data, x_column, y_columns, color_column, size_column = prep_data(
+        data, x_column, y_columns, color_column, size_column
+    )
 
     chart = alt.Chart(
         data,
@@ -958,6 +959,24 @@ def _generate_chart(
     )
 
     return chart.interactive(), chart_info
+
+
+def _prepare_column_names(
+    data: pd.DataFrame, x_column, y_columns, color_column, size_column
+):
+    """Converts column names to strings, since Vega-Lite does not accept ints, etc."""
+    column_names = list(
+        data.columns
+    )  # list() converts RangeIndex, etc, to regular list.
+    str_column_names = [str(c) for c in column_names]
+    data.columns = str_column_names
+
+    return (
+        str(x_column),
+        [str(c) for c in y_columns],
+        None if color_column is None else str(color_column),
+        None if size_column is None else str(size_column),
+    )
 
 
 def _parse_column(
@@ -1017,9 +1036,11 @@ def _parse_y_columns(
         )
 
     for col in y_columns:
-        if str(col) not in data.columns:
+        if col not in data.columns:
+            available_columns = ", ".join(str(c) for c in list(data.columns))
             raise StreamlitAPIException(
-                f"Column {str(col)} in y parameter does not exist in the data."
+                f"Dataset does not have a column named {col}. "
+                f"Available columns are: {available_columns}"
             )
 
     # y_columns should only include x_column when user explicitly asked for it.
@@ -1276,6 +1297,22 @@ def _get_color_enc(
             pass
 
         return color_enc
+
+
+def _dedupe_and_remove_none(*items):
+    """Returns a subset of items where there are no dupes or Nones."""
+    seen = set()
+    out = []
+
+    for x in items:
+        if x is None:
+            continue
+        if x in seen:
+            continue
+        seen.add(x)
+        out.append(x)
+
+    return out
 
 
 def marshall(

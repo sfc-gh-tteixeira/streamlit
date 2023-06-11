@@ -133,7 +133,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         """Test st._arrow_line_chart."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         EXPECTED_DATAFRAME = pd.DataFrame(
-            [[20, 30, 50, 0]], columns=["a", "b", "c", "index-4FLV4aXfCWIrl1KyIeJp"]
+            [[0, 20, 30, 50]], columns=["index-4FLV4aXfCWIrl1KyIeJp", "a", "b", "c"]
         )
 
         st._arrow_line_chart(df, width=640, height=480)
@@ -423,8 +423,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         df.set_index("a", inplace=True)
 
         EXPECTED_DATAFRAME = pd.DataFrame(
-            [[30, 50, 20]],
-            columns=["b", "c", "index-4FLV4aXfCWIrl1KyIeJp"],
+            [[20, 30, 50]],
+            columns=["index-4FLV4aXfCWIrl1KyIeJp", "b", "c"],
             index=pd.RangeIndex(0, 1, 1),
         )
 
@@ -442,8 +442,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         """Test st._arrow_area_chart."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         EXPECTED_DATAFRAME = pd.DataFrame(
-            [[20, 30, 50, 0]],
-            columns=["a", "b", "c", "index-4FLV4aXfCWIrl1KyIeJp"],
+            [[0, 20, 30, 50]],
+            columns=["index-4FLV4aXfCWIrl1KyIeJp", "a", "b", "c"],
         )
 
         st._arrow_area_chart(df)
@@ -460,8 +460,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         """Test st._arrow_bar_chart."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         EXPECTED_DATAFRAME = pd.DataFrame(
-            [[20, 30, 50, 0]],
-            columns=["a", "b", "c", "index-4FLV4aXfCWIrl1KyIeJp"],
+            [[0, 20, 30, 50]],
+            columns=["index-4FLV4aXfCWIrl1KyIeJp", "a", "b", "c"],
         )
 
         st._arrow_bar_chart(df, width=640, height=480)
@@ -481,8 +481,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         """Test st._arrow_scatter_chart."""
         df = pd.DataFrame([[20, 30, 50, 60]], columns=["a", "b", "c", "d"])
         EXPECTED_DATAFRAME = pd.DataFrame(
-            [[20, 30, 50, 60, 0]],
-            columns=["a", "b", "c", "d", "index-4FLV4aXfCWIrl1KyIeJp"],
+            [[0, 60, 20, 30, 50]],
+            columns=["index-4FLV4aXfCWIrl1KyIeJp", "d", "a", "b", "c"],
         )
 
         st._arrow_scatter_chart(df, size="d")
@@ -520,12 +520,12 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         if chart_command == st._arrow_scatter_chart:
             chart_command(df, x="a", y=["b", "c"], color="d", size="e")
             EXPECTED_DATAFRAME = pd.DataFrame(
-                [[10, 20, 30, 40, 50]], columns=["a", "b", "c", "d", "e"]
+                [[10, 40, 50, 20, 30]], columns=["a", "d", "e", "b", "c"]
             )
         else:
             chart_command(df, x="a", y=["b", "c"], color="d")
             EXPECTED_DATAFRAME = pd.DataFrame(
-                [[10, 20, 30, 40]], columns=["a", "b", "c", "d"]
+                [[10, 40, 20, 30]], columns=["a", "d", "b", "c"]
             )
 
         proto = self.get_delta_from_queue().new_element.arrow_vega_lite_chart
