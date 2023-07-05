@@ -153,9 +153,26 @@ class MapMixin:
             - An RGB or RGBA tuple with the red, green, blue, and alpha
               components specified as ints from 0 to 255 or floats from 0.0 to
               1.0.
-            - The name of the column to use for the color. Cells in this column
-              should contain colors represented as a hex string or color tuple,
-              as described above.
+            - The name of a column where the color of each datapoint will come
+              from.
+
+              If the values in this column are in one of the color formats
+              above (hex string or color tuple), then that color will be used.
+
+              Otherwise, the color will be automatically picked from the
+              default palette.
+
+              For example: if the dataset has 1000 rows, but this column can
+              only contains the values "adult", "child", "baby", then those
+              1000 datapoints be shown using 3 colors from the default palette.
+
+              But if this column only contains floats or ints, then those
+              1000 datapoints will be shown using a colors from a continuous
+              color gradient.
+
+              Finally, if this column only contains the values "#ffaa00",
+              "#f0f", "#0000ff", then then each of those 1000 datapoints will
+              be assigned "#ffaa00", "#f0f", or "#0000ff" as appropriate.
 
         size : str or float or None
             The size of the circles representing each point, in meters. This
@@ -405,8 +422,22 @@ def _convert_color_arg_or_column(
 
     if color_col_name is not None:
         # Convert color column to the right format.
+
         if len(data[color_col_name]) > 0 and is_color_like(data[color_col_name][0]):
             data[color_col_name] = data[color_col_name].apply(to_int_color_tuple)
+
+        elif pd.api.types.is_numeric_dtype(data[color_col_name]):
+            # TODO XXX: Use "@@function" syntax to call a JS function that does the magic
+            # See https://deck.gl/docs/api-reference/json/conversion-reference#functions-and-using-function
+            max_value = data[color_col_name].max()
+            min_value = data[color_col_name].min()
+            value_range = max_value - min_value
+            base_color = _DEFAULT_COLOR[:3]
+
+            data[color_col_name] = data[color_col_name].apply(
+                lambda v: (*base_color, int(255 * (v - min_value) / value_range))
+            )
+
         else:
             raise StreamlitAPIException(
                 f'Column "{color_col_name}" does not appear to contain valid colors.'
