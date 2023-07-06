@@ -427,8 +427,11 @@ def _convert_color_arg_or_column(
             data[color_col_name] = data[color_col_name].apply(to_int_color_tuple)
 
         elif pd.api.types.is_numeric_dtype(data[color_col_name]):
-            # TODO XXX: Use "@@function" syntax to call a JS function that does the magic
-            # See https://deck.gl/docs/api-reference/json/conversion-reference#functions-and-using-function
+            # We'd prefer to do this in JS, but there's no way to tell PyDeck to call a
+            # custom JS function on each datapoint.
+            # For a second it seemed like DeckGLJson's "@@function" notation would work,
+            # but it only calls the function once globally, and not repeatedly for each
+            # datapoint :(
             max_value = data[color_col_name].max()
             min_value = data[color_col_name].min()
             value_range = max_value - min_value
