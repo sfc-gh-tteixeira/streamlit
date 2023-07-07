@@ -122,7 +122,7 @@ class DataFrameSelectorMixin:
         >>> st.dataframe(df)  # Same as st.write(df)
 
         .. output::
-           https://doc-dataframe.streamlitapp.com/
+           https://doc-dataframe.streamlit.app/
            height: 410px
 
         You can also pass a Pandas Styler object to change the style of
@@ -139,7 +139,7 @@ class DataFrameSelectorMixin:
         >>> st.dataframe(df.style.highlight_max(axis=0))
 
         .. output::
-           https://doc-dataframe1.streamlitapp.com/
+           https://doc-dataframe1.streamlit.app/
            height: 410px
 
         Or you can customize the dataframe via ``column_config``, ``hide_index``, or ``column_order``:
@@ -174,7 +174,7 @@ class DataFrameSelectorMixin:
         >>> )
 
         .. output::
-           https://doc-dataframe-config.streamlitapp.com/
+           https://doc-dataframe-config.streamlit.app/
            height: 350px
 
         """
@@ -220,7 +220,7 @@ class DataFrameSelectorMixin:
         >>> st.table(df)
 
         .. output::
-           https://doc-table.streamlitapp.com/
+           https://doc-table.streamlit.app/
            height: 480px
 
         """
@@ -339,7 +339,7 @@ class DataFrameSelectorMixin:
         >>> st.line_chart(chart_data)
 
         .. output::
-           https://doc-line-chart.streamlitapp.com/
+           https://doc-line-chart.streamlit.app/
            height: 400px
 
         You can also choose different columns to use for x and y, as well as set
@@ -501,7 +501,7 @@ class DataFrameSelectorMixin:
         >>> st.area_chart(chart_data)
 
         .. output::
-           https://doc-area-chart.streamlitapp.com/
+           https://doc-area-chart.streamlit.app/
            height: 400px
 
         You can also choose different columns to use for x and y, as well as set
@@ -663,7 +663,7 @@ class DataFrameSelectorMixin:
         >>> st.bar_chart(chart_data)
 
         .. output::
-           https://doc-bar-chart.streamlitapp.com/
+           https://doc-bar-chart.streamlit.app/
            height: 400px
 
         You can also choose different columns to use for x and y, as well as set
@@ -924,7 +924,7 @@ class DataFrameSelectorMixin:
         https://altair-viz.github.io/gallery/.
 
         .. output::
-           https://doc-vega-lite-chart.streamlitapp.com/
+           https://doc-vega-lite-chart.streamlit.app/
            height: 300px
 
         """
@@ -992,7 +992,7 @@ class DataFrameSelectorMixin:
         ... })
 
         .. output::
-           https://doc-vega-lite-chart.streamlitapp.com/
+           https://doc-vega-lite-chart.streamlit.app/
            height: 300px
 
         Examples of Vega-Lite usage without Streamlit can be found at
