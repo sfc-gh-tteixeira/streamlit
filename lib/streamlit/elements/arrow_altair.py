@@ -225,7 +225,7 @@ class ArrowAltairMixin:
 
         """
         proto = ArrowVegaLiteChartProto()
-        chart, addrows_metadata = _generate_chart(
+        chart, add_rows_metadata = _generate_chart(
             chart_type=ChartType.LINE,
             data=data,
             x_from_user=x,
@@ -238,7 +238,7 @@ class ArrowAltairMixin:
         marshall(proto, chart, use_container_width, theme="streamlit")
 
         return self.dg._enqueue(
-            "arrow_line_chart", proto, addrows_metadata=addrows_metadata
+            "arrow_line_chart", proto, add_rows_metadata=add_rows_metadata
         )
 
     @gather_metrics("_arrow_area_chart")
@@ -383,7 +383,7 @@ class ArrowAltairMixin:
         """
 
         proto = ArrowVegaLiteChartProto()
-        chart, addrows_metadata = _generate_chart(
+        chart, add_rows_metadata = _generate_chart(
             chart_type=ChartType.AREA,
             data=data,
             x_from_user=x,
@@ -396,7 +396,7 @@ class ArrowAltairMixin:
         marshall(proto, chart, use_container_width, theme="streamlit")
 
         return self.dg._enqueue(
-            "arrow_area_chart", proto, addrows_metadata=addrows_metadata
+            "arrow_area_chart", proto, add_rows_metadata=add_rows_metadata
         )
 
     @gather_metrics("_arrow_bar_chart")
@@ -542,7 +542,7 @@ class ArrowAltairMixin:
         """
 
         proto = ArrowVegaLiteChartProto()
-        chart, addrows_metadata = _generate_chart(
+        chart, add_rows_metadata = _generate_chart(
             chart_type=ChartType.BAR,
             data=data,
             x_from_user=x,
@@ -555,7 +555,7 @@ class ArrowAltairMixin:
         marshall(proto, chart, use_container_width, theme="streamlit")
 
         return self.dg._enqueue(
-            "arrow_bar_chart", proto, addrows_metadata=addrows_metadata
+            "arrow_bar_chart", proto, add_rows_metadata=add_rows_metadata
         )
 
     @gather_metrics("_arrow_scatter_chart")
@@ -709,7 +709,7 @@ class ArrowAltairMixin:
 
         """
         proto = ArrowVegaLiteChartProto()
-        chart, addrows_metadata = _generate_chart(
+        chart, add_rows_metadata = _generate_chart(
             chart_type=ChartType.SCATTER,
             data=data,
             x_from_user=x,
@@ -722,7 +722,7 @@ class ArrowAltairMixin:
         marshall(proto, chart, use_container_width, theme="streamlit")
 
         return self.dg._enqueue(
-            "arrow_scatter_chart", proto, addrows_metadata=addrows_metadata
+            "arrow_scatter_chart", proto, add_rows_metadata=add_rows_metadata
         )
 
     @gather_metrics("_arrow_altair_chart")
@@ -906,7 +906,7 @@ def _generate_chart(
             pd.DataFrame, type_util.convert_anything_to_df(data, ensure_copy=True)
         )
 
-    # We shouldn't use "data" from now on. Only "df".
+    # From now on, use "df" instead of "data".
     del data
 
     # Convert arguments received from the user to things Vega-Lite understands.
@@ -920,7 +920,7 @@ def _generate_chart(
     size_column, size_value = _parse_column(df, size_from_user)
 
     # Store this info for add_rows.
-    addrows_metadata = AddRowsMetadata(
+    add_rows_metadata = AddRowsMetadata(
         last_index=last_index_for_melted_dataframes(df),
         columns=dict(
             x_column=x_column,
@@ -937,6 +937,7 @@ def _generate_chart(
         df, x_column, y_columns, color_column, size_column
     )
 
+    # Create a Chart with no encodings.
     chart = alt.Chart(
         df,
         mark=chart_type.value["mark_type"],
@@ -956,26 +957,31 @@ def _generate_chart(
 
         chart = chart.transform_fold(y_columns, as_=[color_column, y_column])
 
+    # Set up x and y encodings.
     if x_column is not None and y_columns:
         chart = chart.encode(
             x=_get_x_enc(df, chart_type, x_column),
             y=_get_y_enc(df, y_column, y_columns),
         )
 
+    # Set up opacity encoding.
     opacity_enc = _get_opacity_enc(chart_type, color_column, y_column)
     if opacity_enc is not None:
         chart = chart.encode(opacity=opacity_enc)
 
+    # Set up color encoding.
     color_enc = _get_color_enc(
         df, color_from_user, color_value, color_column, y_columns
     )
     if color_enc is not None:
         chart = chart.encode(color=color_enc)
 
+    # Set up size encoding.
     size_enc = _get_size_enc(chart_type, size_column, size_value)
     if size_enc is not None:
         chart = chart.encode(size=size_enc)
 
+    # Set up tooltip encoding.
     chart = chart.encode(
         tooltip=_get_tooltip_enc(
             x_column,
@@ -986,7 +992,7 @@ def _generate_chart(
         )
     )
 
-    return chart.interactive(), addrows_metadata
+    return chart.interactive(), add_rows_metadata
 
 
 def _prepare_column_names(

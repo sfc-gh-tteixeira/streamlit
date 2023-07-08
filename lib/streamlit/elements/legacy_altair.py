@@ -91,11 +91,11 @@ class LegacyAltairMixin:
         """
         vega_lite_chart_proto = VegaLiteChartProto()
 
-        chart, addrows_metadata = generate_chart("line", data, width, height)
+        chart, add_rows_metadata = generate_chart("line", data, width, height)
         marshall(vega_lite_chart_proto, chart, use_container_width)
 
         return self.dg._enqueue(
-            "line_chart", vega_lite_chart_proto, addrows_metadata=addrows_metadata
+            "line_chart", vega_lite_chart_proto, add_rows_metadata=add_rows_metadata
         )
 
     @gather_metrics("_legacy_area_chart")
@@ -150,11 +150,11 @@ class LegacyAltairMixin:
         """
         vega_lite_chart_proto = VegaLiteChartProto()
 
-        chart, addrows_metadata = generate_chart("area", data, width, height)
+        chart, add_rows_metadata = generate_chart("area", data, width, height)
         marshall(vega_lite_chart_proto, chart, use_container_width)
 
         return self.dg._enqueue(
-            "area_chart", vega_lite_chart_proto, addrows_metadata=addrows_metadata
+            "area_chart", vega_lite_chart_proto, add_rows_metadata=add_rows_metadata
         )
 
     @gather_metrics("_legacy_bar_chart")
@@ -209,11 +209,11 @@ class LegacyAltairMixin:
         """
         vega_lite_chart_proto = VegaLiteChartProto()
 
-        chart, addrows_metadata = generate_chart("bar", data, width, height)
+        chart, add_rows_metadata = generate_chart("bar", data, width, height)
         marshall(vega_lite_chart_proto, chart, use_container_width)
 
         return self.dg._enqueue(
-            "bar_chart", vega_lite_chart_proto, addrows_metadata=addrows_metadata
+            "bar_chart", vega_lite_chart_proto, add_rows_metadata=add_rows_metadata
         )
 
     @gather_metrics("_legacy_altair_chart")
@@ -312,7 +312,7 @@ def generate_chart(chart_type, data, width: int = 0, height: int = 0):
     if index_name is None:
         index_name = "index"
 
-    addrows_metadata = AddRowsMetadata(
+    add_rows_metadata = AddRowsMetadata(
         last_index=last_index_for_melted_dataframes(data),
         # Not used:
         columns=dict(
@@ -357,7 +357,7 @@ def generate_chart(chart_type, data, width: int = 0, height: int = 0):
         )
         .interactive()
     )
-    return chart, addrows_metadata
+    return chart, add_rows_metadata
 
 
 def marshall(
