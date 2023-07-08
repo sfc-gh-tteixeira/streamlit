@@ -24,6 +24,6 @@ class PrepDataColumns(TypedDict):
 
 
 @dataclass
-class ChartInfo:
+class AddRowsMetadata:
     last_index: Optional[Hashable]
     columns: PrepDataColumns

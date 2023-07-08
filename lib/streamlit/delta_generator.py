@@ -36,7 +36,7 @@ from typing_extensions import Final, Literal
 from streamlit import config, cursor, env_util, logger, runtime, type_util, util
 from streamlit.cursor import Cursor
 from streamlit.elements.alert import AlertMixin
-from streamlit.elements.altair_utils import ChartInfo
+from streamlit.elements.altair_utils import AddRowsMetadata
 
 # DataFrame elements come in two flavors: "Legacy" and "Arrow".
 # We select between them with the DataFrameElementSelectorMixin.
@@ -417,7 +417,7 @@ class DeltaGenerator(
         delta_type: str,
         element_proto: Message,
         return_value: None,
-        chart_info: Optional[ChartInfo] = None,
+        addrows_metadata: Optional[AddRowsMetadata] = None,
         element_width: int | None = None,
         element_height: int | None = None,
     ) -> DeltaGenerator:
@@ -429,7 +429,7 @@ class DeltaGenerator(
         delta_type: str,
         element_proto: Message,
         return_value: Type[NoValue],
-        chart_info: Optional[ChartInfo] = None,
+        addrows_metadata: Optional[AddRowsMetadata] = None,
         element_width: int | None = None,
         element_height: int | None = None,
     ) -> None:
@@ -441,7 +441,7 @@ class DeltaGenerator(
         delta_type: str,
         element_proto: Message,
         return_value: Value,
-        chart_info: Optional[ChartInfo] = None,
+        addrows_metadata: Optional[AddRowsMetadata] = None,
         element_width: int | None = None,
         element_height: int | None = None,
     ) -> Value:
@@ -453,7 +453,7 @@ class DeltaGenerator(
         delta_type: str,
         element_proto: Message,
         return_value: None = None,
-        chart_info: Optional[ChartInfo] = None,
+        addrows_metadata: Optional[AddRowsMetadata] = None,
         element_width: int | None = None,
         element_height: int | None = None,
     ) -> DeltaGenerator:
@@ -465,7 +465,7 @@ class DeltaGenerator(
         delta_type: str,
         element_proto: Message,
         return_value: Type[NoValue] | Value | None = None,
-        chart_info: Optional[ChartInfo] = None,
+        addrows_metadata: Optional[AddRowsMetadata] = None,
         element_width: int | None = None,
         element_height: int | None = None,
     ) -> DeltaGenerator | Value | None:
@@ -476,7 +476,7 @@ class DeltaGenerator(
         delta_type: str,
         element_proto: Message,
         return_value: Type[NoValue] | Value | None = None,
-        chart_info: Optional[ChartInfo] = None,
+        addrows_metadata: Optional[AddRowsMetadata] = None,
         element_width: int | None = None,
         element_height: int | None = None,
     ) -> DeltaGenerator | Value | None:
@@ -549,7 +549,7 @@ class DeltaGenerator(
             # position.
             new_cursor = (
                 dg._cursor.get_locked_cursor(
-                    delta_type=delta_type, chart_info=chart_info
+                    delta_type=delta_type, addrows_metadata=addrows_metadata
                 )
                 if dg._cursor is not None
                 else None
@@ -637,7 +637,7 @@ class DeltaGenerator(
         block_dg._form_data = FormData(current_form_id(dg))
 
         # Must be called to increment this cursor's index.
-        dg._cursor.get_locked_cursor(chart_info=None)
+        dg._cursor.get_locked_cursor(addrows_metadata=None)
         _enqueue_message(msg)
 
         caching.save_block_message(
@@ -741,7 +741,7 @@ class DeltaGenerator(
         # st._legacy_foo() element with new data instead of doing a _legacy_add_rows().
         if (
             self._cursor.props["delta_type"] in DELTA_TYPES_THAT_MELT_DATAFRAMES
-            and self._cursor.props["chart_info"].last_index is None
+            and self._cursor.props["addrows_metadata"].last_index is None
         ):
             # IMPORTANT: This assumes delta types and st method names always
             # match!
@@ -751,10 +751,10 @@ class DeltaGenerator(
             st_method(data, **kwargs)
             return None
 
-        data, self._cursor.props["chart_info"] = _prep_data_for_add_rows(
+        data, self._cursor.props["addrows_metadata"] = _prep_data_for_add_rows(
             data,
             self._cursor.props["delta_type"],
-            self._cursor.props["chart_info"],
+            self._cursor.props["addrows_metadata"],
             is_arrow=False,
         )
 
@@ -860,7 +860,7 @@ class DeltaGenerator(
         # st._arrow_foo() element with new data instead of doing a _arrow_add_rows().
         if (
             self._cursor.props["delta_type"] in ARROW_DELTA_TYPES_THAT_MELT_DATAFRAMES
-            and self._cursor.props["chart_info"].last_index is None
+            and self._cursor.props["addrows_metadata"].last_index is None
         ):
             # IMPORTANT: This assumes delta types and st method names always
             # match!
@@ -870,10 +870,10 @@ class DeltaGenerator(
             st_method(data, **kwargs)
             return None
 
-        data, self._cursor.props["chart_info"] = _prep_data_for_add_rows(
+        data, self._cursor.props["addrows_metadata"] = _prep_data_for_add_rows(
             data,
             self._cursor.props["delta_type"],
-            self._cursor.props["chart_info"],
+            self._cursor.props["addrows_metadata"],
             is_arrow=True,
         )
 
@@ -900,7 +900,7 @@ DFT = TypeVar("DFT", bound=type_util.DataFrameCompatible)
 def _prep_data_for_add_rows(
     data: DFT,
     delta_type: str,
-    chart_info: ChartInfo,
+    addrows_metadata: AddRowsMetadata,
     is_arrow: bool,
 ) -> tuple[DFT | DataFrame, int | Any]:
     import pandas as pd
@@ -928,14 +928,14 @@ def _prep_data_for_add_rows(
                     "'RangeIndex' object has no attribute 'step'"
                 )
 
-            start = chart_info.last_index + old_step
-            stop = chart_info.last_index + old_step + old_stop
+            start = addrows_metadata.last_index + old_step
+            stop = addrows_metadata.last_index + old_step + old_stop
 
             df.index = pd.RangeIndex(start=start, stop=stop, step=old_step)
-            chart_info.last_index = stop - 1
+            addrows_metadata.last_index = stop - 1
 
         if is_arrow:
-            df, _, _, _, _ = prep_data(df, **chart_info.columns)
+            df, _, _, _, _ = prep_data(df, **addrows_metadata.columns)
         else:
             index_name = df.index.name
             if index_name is None:
@@ -943,7 +943,7 @@ def _prep_data_for_add_rows(
 
             df = pd.melt(df.reset_index(), id_vars=[index_name])
 
-    return df, chart_info
+    return df, addrows_metadata
 
 
 def _get_pandas_index_attr(

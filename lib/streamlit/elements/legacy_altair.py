@@ -25,7 +25,7 @@ import pyarrow as pa
 
 import streamlit.elements.legacy_vega_lite as vega_lite
 from streamlit import errors, type_util
-from streamlit.elements.altair_utils import ChartInfo
+from streamlit.elements.altair_utils import AddRowsMetadata
 from streamlit.elements.utils import last_index_for_melted_dataframes
 from streamlit.proto.VegaLiteChart_pb2 import VegaLiteChart as VegaLiteChartProto
 from streamlit.runtime.metrics_util import gather_metrics
@@ -91,11 +91,11 @@ class LegacyAltairMixin:
         """
         vega_lite_chart_proto = VegaLiteChartProto()
 
-        chart, chart_info = generate_chart("line", data, width, height)
+        chart, addrows_metadata = generate_chart("line", data, width, height)
         marshall(vega_lite_chart_proto, chart, use_container_width)
 
         return self.dg._enqueue(
-            "line_chart", vega_lite_chart_proto, chart_info=chart_info
+            "line_chart", vega_lite_chart_proto, addrows_metadata=addrows_metadata
         )
 
     @gather_metrics("_legacy_area_chart")
@@ -150,11 +150,11 @@ class LegacyAltairMixin:
         """
         vega_lite_chart_proto = VegaLiteChartProto()
 
-        chart, chart_info = generate_chart("area", data, width, height)
+        chart, addrows_metadata = generate_chart("area", data, width, height)
         marshall(vega_lite_chart_proto, chart, use_container_width)
 
         return self.dg._enqueue(
-            "area_chart", vega_lite_chart_proto, chart_info=chart_info
+            "area_chart", vega_lite_chart_proto, addrows_metadata=addrows_metadata
         )
 
     @gather_metrics("_legacy_bar_chart")
@@ -209,11 +209,11 @@ class LegacyAltairMixin:
         """
         vega_lite_chart_proto = VegaLiteChartProto()
 
-        chart, chart_info = generate_chart("bar", data, width, height)
+        chart, addrows_metadata = generate_chart("bar", data, width, height)
         marshall(vega_lite_chart_proto, chart, use_container_width)
 
         return self.dg._enqueue(
-            "bar_chart", vega_lite_chart_proto, chart_info=chart_info
+            "bar_chart", vega_lite_chart_proto, addrows_metadata=addrows_metadata
         )
 
     @gather_metrics("_legacy_altair_chart")
@@ -312,7 +312,7 @@ def generate_chart(chart_type, data, width: int = 0, height: int = 0):
     if index_name is None:
         index_name = "index"
 
-    chart_info = ChartInfo(
+    addrows_metadata = AddRowsMetadata(
         last_index=last_index_for_melted_dataframes(data),
         # Not used:
         columns=dict(
@@ -357,7 +357,7 @@ def generate_chart(chart_type, data, width: int = 0, height: int = 0):
         )
         .interactive()
     )
-    return chart, chart_info
+    return chart, addrows_metadata
 
 
 def marshall(
