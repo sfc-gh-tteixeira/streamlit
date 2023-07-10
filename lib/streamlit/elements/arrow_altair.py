@@ -829,24 +829,6 @@ def prep_data(
     consideration) and y, color, and size columns (converting to str if needed).
     """
 
-    # Check the data for correctness.
-
-    # TODO XXX: This code is most likely wrong. Need to figure out why the original code
-    # exists. Maybe it's not a problem anymore, now that we melt the data on the
-    # frontend?
-    for col in y_columns:
-        series = df[col]
-        if (
-            series.dtype == "object"
-            and "mixed" in infer_dtype(series)
-            and len(y_columns.unique()) > 100
-        ):
-            raise StreamlitAPIException(
-                "The columns used for rendering the chart contain too many "
-                "values with mixed types. Please select the columns manually "
-                "via the y parameter."
-            )
-
     # If using index, pull it into its own column.
     if x_column is None:
         x_column = SEPARATED_INDEX_COLUMN_NAME
