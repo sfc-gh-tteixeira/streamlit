@@ -70,7 +70,14 @@ class ChartType(Enum):
     SCATTER = {"mark_type": "circle"}
 
 
-LEGEND_SETTINGS = dict(titlePadding=0, offset=10, orient="bottom")
+# Color and size legends need different title paddings in order for them
+# to be vertically aligned.
+# NOTE: I don't think it's possible to *perfectly* align the size and
+# color legends in all instances, since the "size" circles vary in size based
+# on the data, and their container is top-aligned with the color container. But
+# through trial-and-error I found this value to be a good enough middle ground.
+COLOR_LEGEND_SETTINGS = dict(titlePadding=5, offset=5, orient="bottom")
+SIZE_LEGEND_SETTINGS = dict(titlePadding=1, offset=5, orient="bottom")
 
 # Avoid collision with existing column names.
 PROTECTION_SUFFIX = "-p5bJXXpQgvPz6yvQMFiy"
@@ -1242,7 +1249,7 @@ def _get_size_enc(
         if size_column is not None:
             return alt.Size(
                 size_column,
-                legend=LEGEND_SETTINGS,
+                legend=SIZE_LEGEND_SETTINGS,
             )
 
         elif isinstance(size_value, (float, int)):
@@ -1296,7 +1303,7 @@ def _get_color_enc(
             return alt.Color(
                 field=color_column,
                 scale=alt.Scale(range=[to_css_color(c) for c in color_values]),
-                legend=LEGEND_SETTINGS,
+                legend=COLOR_LEGEND_SETTINGS,
                 type="nominal",
                 title=" ",
             )
@@ -1308,7 +1315,7 @@ def _get_color_enc(
             column_type = type_util.infer_vegalite_type(df[color_column])
 
         color_enc = alt.Color(
-            field=color_column, legend=LEGEND_SETTINGS, type=column_type
+            field=color_column, legend=COLOR_LEGEND_SETTINGS, type=column_type
         )
 
         # Fix title if DF was melted
