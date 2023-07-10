@@ -79,14 +79,17 @@ class ChartType(Enum):
 COLOR_LEGEND_SETTINGS = dict(titlePadding=5, offset=5, orient="bottom")
 SIZE_LEGEND_SETTINGS = dict(titlePadding=1, offset=5, orient="bottom")
 
-# Avoid collision with existing column names.
-PROTECTION_SUFFIX = "-p5bJXXpQgvPz6yvQMFiy"
-SEPARATED_INDEX_COLUMN_NAME = "index-4FLV4aXfCWIrl1KyIeJp"
+# User-readable names to give the index and melted columns.
 SEPARATED_INDEX_COLUMN_TITLE = "index"
-MELTED_Y_COLUMN_NAME = "values-7hbjwi6ywufr4T3VmvRh"
 MELTED_Y_COLUMN_TITLE = "values"
-MELTED_COLOR_COLUMN_NAME = "color-xWSR9VDwhyLw5IHyGvPX"
 MELTED_COLOR_COLUMN_TITLE = "color"
+
+# Crazy internal (non-user-visible) names for the index and melted columns, in order to
+# avoid collision with existing column names.
+PROTECTION_SUFFIX = "--p5bJXXpQgvPz6yvQMFiy"
+SEPARATED_INDEX_COLUMN_NAME = SEPARATED_INDEX_COLUMN_TITLE + PROTECTION_SUFFIX
+MELTED_Y_COLUMN_NAME = MELTED_Y_COLUMN_TITLE + PROTECTION_SUFFIX
+MELTED_COLOR_COLUMN_NAME = MELTED_COLOR_COLUMN_TITLE + PROTECTION_SUFFIX
 
 
 class ArrowAltairMixin:
@@ -838,6 +841,7 @@ def prep_data(
 
     # If using index, pull it into its own column.
     if x_column is None:
+        # Pick column name that is unlikely to collide with user-given names.
         x_column = SEPARATED_INDEX_COLUMN_NAME
         df = df.reset_index(names=x_column)
 

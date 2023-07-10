@@ -133,7 +133,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         """Test st._arrow_line_chart."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         EXPECTED_DATAFRAME = pd.DataFrame(
-            [[0, 20, 30, 50]], columns=["index-4FLV4aXfCWIrl1KyIeJp", "a", "b", "c"]
+            [[0, 20, 30, 50]], columns=["index--p5bJXXpQgvPz6yvQMFiy", "a", "b", "c"]
         )
 
         st._arrow_line_chart(df, width=640, height=480)
@@ -205,17 +205,17 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         self.assertEqual(chart_spec["transform"][0]["fold"], ["b", "c"])
         self.assertEqual(
             chart_spec["transform"][0]["as"],
-            ["color-xWSR9VDwhyLw5IHyGvPX", "values-7hbjwi6ywufr4T3VmvRh"],
+            ["color--p5bJXXpQgvPz6yvQMFiy", "values--p5bJXXpQgvPz6yvQMFiy"],
         )
 
         # The melted 'y' field should have a unique name we hardcoded.
         self.assertEqual(
-            chart_spec["encoding"]["y"]["field"], "values-7hbjwi6ywufr4T3VmvRh"
+            chart_spec["encoding"]["y"]["field"], "values--p5bJXXpQgvPz6yvQMFiy"
         )
 
         # The melted 'color' field should have a unique name we hardcoded.
         self.assertEqual(
-            chart_spec["encoding"]["color"]["field"], "color-xWSR9VDwhyLw5IHyGvPX"
+            chart_spec["encoding"]["color"]["field"], "color--p5bJXXpQgvPz6yvQMFiy"
         )
 
         pd.testing.assert_frame_equal(
@@ -361,7 +361,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
 
         # Color should be set to the melted column name.
         self.assertEqual(
-            chart_spec["encoding"]["color"]["field"], "color-xWSR9VDwhyLw5IHyGvPX"
+            chart_spec["encoding"]["color"]["field"], "color--p5bJXXpQgvPz6yvQMFiy"
         )
 
         # Automatically-specified colors should have no legend title.
@@ -424,7 +424,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
 
         EXPECTED_DATAFRAME = pd.DataFrame(
             [[20, 30, 50]],
-            columns=["index-4FLV4aXfCWIrl1KyIeJp", "b", "c"],
+            columns=["index--p5bJXXpQgvPz6yvQMFiy", "b", "c"],
             index=pd.RangeIndex(0, 1, 1),
         )
 
@@ -443,7 +443,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         EXPECTED_DATAFRAME = pd.DataFrame(
             [[0, 20, 30, 50]],
-            columns=["index-4FLV4aXfCWIrl1KyIeJp", "a", "b", "c"],
+            columns=["index--p5bJXXpQgvPz6yvQMFiy", "a", "b", "c"],
         )
 
         st._arrow_area_chart(df)
@@ -461,7 +461,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         EXPECTED_DATAFRAME = pd.DataFrame(
             [[0, 20, 30, 50]],
-            columns=["index-4FLV4aXfCWIrl1KyIeJp", "a", "b", "c"],
+            columns=["index--p5bJXXpQgvPz6yvQMFiy", "a", "b", "c"],
         )
 
         st._arrow_bar_chart(df, width=640, height=480)
@@ -482,7 +482,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         df = pd.DataFrame([[20, 30, 50, 60]], columns=["a", "b", "c", "d"])
         EXPECTED_DATAFRAME = pd.DataFrame(
             [[0, 60, 20, 30, 50]],
-            columns=["index-4FLV4aXfCWIrl1KyIeJp", "d", "a", "b", "c"],
+            columns=["index--p5bJXXpQgvPz6yvQMFiy", "d", "a", "b", "c"],
         )
 
         st._arrow_scatter_chart(df, size="d")
