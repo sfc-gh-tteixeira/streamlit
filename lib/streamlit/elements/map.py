@@ -98,7 +98,6 @@ class MapMixin:
         color: Union[None, str, Color] = None,
         size: Union[None, str, float] = None,
         zoom: Optional[int] = None,
-        map_style: Optional[str] = None,
         use_container_width: bool = True,
     ) -> "DeltaGenerator":
         """Display a map with a scatterplot overlayed onto it.
@@ -191,13 +190,6 @@ class MapMixin:
             https://wiki.openstreetmap.org/wiki/Zoom_levels.
             This argument can only be supplied by keyword.
 
-        map_style : str or None
-            One of Mapbox's map style URLs. A full list can be found here:
-            https://docs.mapbox.com/api/maps/styles/#mapbox-styles
-
-            This feature requires a Mapbox token. See the top of these docs
-            for information on how to get one and set it up in Streamlit.
-
         use_container_width: bool
             If True, set the chart width to the column width. This takes
             precedence over the width argument.
@@ -241,6 +233,20 @@ class MapMixin:
         ...     color='col4')
 
         """
+        # This feature was turned off while we investigate why different
+        # map styles cause DeckGL to crash.
+        #
+        # For reference, this was the docstring for map_style:
+        #
+        #   map_style : str or None
+        #       One of Mapbox's map style URLs. A full list can be found here:
+        #       https://docs.mapbox.com/api/maps/styles/#mapbox-styles
+        #
+        #       This feature requires a Mapbox token. See the top of these docs
+        #       for information on how to get one and set it up in Streamlit.
+        #
+        map_style = None
+
         map_proto = DeckGlJsonChartProto()
         map_proto.json = to_deckgl_json(
             data, latitude, longitude, size, color, map_style, zoom
@@ -424,7 +430,10 @@ def _convert_color_arg_or_column(
         # Convert color column to the right format.
 
         if len(data[color_col_name]) > 0 and is_color_like(data[color_col_name][0]):
-            data[color_col_name] = data[color_col_name].apply(to_int_color_tuple)
+            # Use .loc[] to avoid a SettingWithCopyWarning in some cases.
+            data.loc[:, color_col_name] = data.loc[:, color_col_name].map(
+                to_int_color_tuple
+            )
 
         elif pd.api.types.is_numeric_dtype(data[color_col_name]):
             # We'd prefer to do this in JS, but there's no way to tell PyDeck to call a
