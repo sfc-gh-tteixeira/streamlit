@@ -500,8 +500,8 @@ def convert_anything_to_df(
         type of the data. For example, a Pandas DataFrame will be returned as-is.
 
     allow_styler: bool
-        If True, allows this to return a Pandas Styler object as well. If False, drops all
-        styles from the Styler and returns a plain Pandas DataFrame.
+        If True, allows this to return a Pandas Styler object as well. If False, returns
+        a plain Pandas DataFrame (which, of course, won't contain the Styler's styles).
 
     Returns
     -------

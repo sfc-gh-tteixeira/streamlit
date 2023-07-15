@@ -17,6 +17,8 @@ from typing import Hashable, List, Optional, TypedDict
 
 
 class PrepDataColumns(TypedDict):
+    """Columns used for the prep_data step in Altair Arrow charts."""
+
     x_column: Optional[str]
     y_columns: List[str]
     color_column: Optional[str]
@@ -25,5 +27,7 @@ class PrepDataColumns(TypedDict):
 
 @dataclass
 class AddRowsMetadata:
+    """Metadata needed by add_rows on native charts."""
+
     last_index: Optional[Hashable]
     columns: PrepDataColumns

@@ -759,7 +759,7 @@ class DeltaGenerator(
             data,
             self._cursor.props["delta_type"],
             self._cursor.props["add_rows_metadata"],
-            is_arrow=False,
+            is_legacy=True,
         )
 
         msg = ForwardMsg_pb2.ForwardMsg()
@@ -878,7 +878,7 @@ class DeltaGenerator(
             data,
             self._cursor.props["delta_type"],
             self._cursor.props["add_rows_metadata"],
-            is_arrow=True,
+            is_legacy=False,
         )
 
         msg = ForwardMsg_pb2.ForwardMsg()
@@ -902,7 +902,7 @@ def _prep_data_for_add_rows(
     data: DFT,
     delta_type: str,
     add_rows_metadata: AddRowsMetadata,
-    is_arrow: bool,
+    is_legacy: bool,
 ) -> tuple[DFT | DataFrame, int | Any]:
     import pandas as pd
 
@@ -935,14 +935,14 @@ def _prep_data_for_add_rows(
             df.index = pd.RangeIndex(start=start, stop=stop, step=old_step)
             add_rows_metadata.last_index = stop - 1
 
-        if is_arrow:
-            df, *_ = prep_data(df, **add_rows_metadata.columns)
-        else:
+        if is_legacy:
             index_name = df.index.name
             if index_name is None:
                 index_name = "index"
 
             df = pd.melt(df.reset_index(), id_vars=[index_name])
+        else:
+            df, *_ = prep_data(df, **add_rows_metadata.columns)
 
     return df, add_rows_metadata
 

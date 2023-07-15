@@ -276,17 +276,17 @@ class DataFrameSelectorMixin:
 
             For a line chart with just 1 line, this can be:
 
-            - None, to use the default color.
-            - A hex string like "#ffaa00" or "#ffaa0088".
-            - An RGB or RGBA tuple with the red, green, #04f, and alpha
+            * None, to use the default color.
+            * A hex string like "#ffaa00" or "#ffaa0088".
+            * An RGB or RGBA tuple with the red, green, #04f, and alpha
               components specified as ints from 0 to 255 or floats from 0.0 to
               1.0.
 
             For a line chart with multiple lines, where the dataframe is in
             long format (that is, y is None or just 1 column), this can be:
 
-            - None, to use the default colors.
-            - The name of a column in the dataset. Data points will be grouped
+            * None, to use the default colors.
+            * The name of a column in the dataset. Data points will be grouped
               into lines of the same color based on the value of this column.
               In addition, if the values in this column in one of the color
               formats above (hex string or color tuple), then that color will
@@ -305,8 +305,8 @@ class DataFrameSelectorMixin:
             For a line chart with multiple lines, where the dataframe is in
             wide format (that is, y is a sequence of columns), this can be:
 
-            - None, to use the default colors.
-            - A list of string colors or color tuples to be used for each of
+            * None, to use the default colors.
+            * A list of string colors or color tuples to be used for each of
               the lines in the chart. This list should have the same length
               as the number of y values.
 
@@ -438,17 +438,17 @@ class DataFrameSelectorMixin:
 
             For an area chart with just 1 series, this can be:
 
-            - None, to use the default color.
-            - A hex string like "#ffaa00" or "#ffaa0088".
-            - An RGB or RGBA tuple with the red, green, #04f, and alpha
+            * None, to use the default color.
+            * A hex string like "#ffaa00" or "#ffaa0088".
+            * An RGB or RGBA tuple with the red, green, #04f, and alpha
               components specified as ints from 0 to 255 or floats from 0.0 to
               1.0.
 
             For an area chart with multiple series, where the dataframe is in
             long format (that is, y is None or just 1 column), this can be:
 
-            - None, to use the default colors.
-            - The name of a column in the dataset. Data points will be grouped
+            * None, to use the default colors.
+            * The name of a column in the dataset. Data points will be grouped
               into series of the same color based on the value of this column.
               In addition, if the values in this column in one of the color
               formats above (hex string or color tuple), then that color will
@@ -467,8 +467,8 @@ class DataFrameSelectorMixin:
             For an area chart with multiple series, where the dataframe is in
             wide format (that is, y is a sequence of columns), this can be:
 
-            - None, to use the default colors.
-            - A list of string colors or color tuples to be used for each of
+            * None, to use the default colors.
+            * A list of string colors or color tuples to be used for each of
               the series in the chart. This list should have the same length
               as the number of y values.
 
@@ -600,17 +600,17 @@ class DataFrameSelectorMixin:
 
             For a bar chart with just 1 series, this can be:
 
-            - None, to use the default color.
-            - A hex string like "#ffaa00" or "#ffaa0088".
-            - An RGB or RGBA tuple with the red, green, #04f, and alpha
+            * None, to use the default color.
+            * A hex string like "#ffaa00" or "#ffaa0088".
+            * An RGB or RGBA tuple with the red, green, #04f, and alpha
               components specified as ints from 0 to 255 or floats from 0.0 to
               1.0.
 
             For a bar chart with multiple series, where the dataframe is in
             long format (that is, y is None or just 1 column), this can be:
 
-            - None, to use the default colors.
-            - The name of a column in the dataset. Data points will be grouped
+            * None, to use the default colors.
+            * The name of a column in the dataset. Data points will be grouped
               into series of the same color based on the value of this column.
               In addition, if the values in this column in one of the color
               formats above (hex string or color tuple), then that color will
@@ -629,8 +629,8 @@ class DataFrameSelectorMixin:
             For a bar chart with multiple series, where the dataframe is in
             wide format (that is, y is a sequence of columns), this can be:
 
-            - None, to use the default colors.
-            - A list of string colors or color tuples to be used for each of
+            * None, to use the default colors.
+            * A list of string colors or color tuples to be used for each of
               the series in the chart. This list should have the same length
               as the number of y values.
 
@@ -764,12 +764,12 @@ class DataFrameSelectorMixin:
 
             This can be:
 
-            - None, to use the default color.
-            - A hex string like "#ffaa00" or "#ffaa0088".
-            - An RGB or RGBA tuple with the red, green, #04f, and alpha
+            * None, to use the default color.
+            * A hex string like "#ffaa00" or "#ffaa0088".
+            * An RGB or RGBA tuple with the red, green, #04f, and alpha
               components specified as ints from 0 to 255 or floats from 0.0 to
               1.0.
-            - The name of a column in the dataset where the color of that
+            * The name of a column in the dataset where the color of that
               datapoint will come from.
 
               If the values in this column are in one of the color formats
@@ -793,7 +793,7 @@ class DataFrameSelectorMixin:
             If the dataframe is in wide format (that is, y is a sequence of
             columns), this can also be:
 
-            - A list of string colors or color tuples to be used for each of
+            * A list of string colors or color tuples to be used for each of
               the series in the chart. This list should have the same length
               as the number of y values.
 
@@ -806,9 +806,9 @@ class DataFrameSelectorMixin:
 
             This can be:
 
-            - A number like 100, to specify a single size to use for all
+            * A number like 100, to specify a single size to use for all
               datapoints.
-            - The name of the column to use for the size. This allows each
+            * The name of the column to use for the size. This allows each
               datapoint to be represented by a circle of a different size.
 
         width : int
