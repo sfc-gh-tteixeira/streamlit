@@ -20,7 +20,7 @@ class PrepDataColumns(TypedDict):
     """Columns used for the prep_data step in Altair Arrow charts."""
 
     x_column: Optional[str]
-    y_columns: List[str]
+    wide_y_columns: List[str]
     color_column: Optional[str]
     size_column: Optional[str]
 
