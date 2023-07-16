@@ -28,6 +28,7 @@ from streamlit.elements.arrow_altair import ChartType
 from streamlit.errors import StreamlitAPIException
 from streamlit.type_util import bytes_to_data_frame
 from tests.delta_generator_test_case import DeltaGeneratorTestCase
+from tests.streamlit import pyspark_mocks, snowpark_mocks
 
 
 def _deep_get(dictionary, *keys):
@@ -139,9 +140,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
     )
     def test_empty_arrow_chart(self, chart_command: Callable, altair_type: str):
         """Test arrow chart with no arguments."""
-        EXPECTED_DATAFRAME = pd.DataFrame().reset_index(
-            names="index--p5bJXXpQgvPz6yvQMFiy"
-        )
+        EXPECTED_DATAFRAME = pd.DataFrame()
 
         chart_command()
 
@@ -179,6 +178,71 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         self.assert_wide_format_output(
             chart_spec, "index--p5bJXXpQgvPz6yvQMFiy", ["a", "b", "c"]
         )
+        pd.testing.assert_frame_equal(
+            bytes_to_data_frame(proto.datasets[0].data.data),
+            EXPECTED_DATAFRAME,
+        )
+
+    @parameterized.expand(
+        [
+            (st._arrow_area_chart, "area"),
+            (st._arrow_bar_chart, "bar"),
+            (st._arrow_line_chart, "line"),
+            (st._arrow_scatter_chart, "circle"),
+        ]
+    )
+    def test_arrow_chart_with_pyspark_dataframe(
+        self, chart_command: Callable, altair_type: str
+    ):
+        spark_df = pyspark_mocks.DataFrame(is_numpy_arr=True)
+        EXPECTED_DATAFRAME = (
+            spark_df.toPandas()
+            .reset_index(names="index--p5bJXXpQgvPz6yvQMFiy")
+            .loc[0:9999, :]
+        )
+
+        chart_command(spark_df)
+
+        proto = self.get_delta_from_queue().new_element.arrow_vega_lite_chart
+        chart_spec = json.loads(proto.spec)
+        self.assertIn(chart_spec["mark"], [altair_type, {"type": altair_type}])
+        self.assert_wide_format_output(
+            chart_spec, "index--p5bJXXpQgvPz6yvQMFiy", ["A", "B", "C", "D"]
+        )
+
+        pd.testing.assert_frame_equal(
+            bytes_to_data_frame(proto.datasets[0].data.data),
+            EXPECTED_DATAFRAME,
+        )
+
+    @parameterized.expand(
+        [
+            (st._arrow_area_chart, "area"),
+            (st._arrow_bar_chart, "bar"),
+            (st._arrow_line_chart, "line"),
+            (st._arrow_scatter_chart, "circle"),
+        ]
+    )
+    def test_arrow_chart_with_snowpark_dataframe(
+        self, chart_command: Callable, altair_type: str
+    ):
+        snow_df = snowpark_mocks.DataFrame()
+        EXPECTED_DATAFRAME = (
+            pd.DataFrame(snow_df.collect())
+            .reset_index(names="index--p5bJXXpQgvPz6yvQMFiy")
+            .loc[0:9999, :]
+        )
+        EXPECTED_DATAFRAME.columns = EXPECTED_DATAFRAME.columns.astype(str)
+
+        chart_command(snow_df)
+
+        proto = self.get_delta_from_queue().new_element.arrow_vega_lite_chart
+        chart_spec = json.loads(proto.spec)
+        self.assertIn(chart_spec["mark"], [altair_type, {"type": altair_type}])
+        self.assert_wide_format_output(
+            chart_spec, "index--p5bJXXpQgvPz6yvQMFiy", ["0", "1", "2", "3"]
+        )
+
         pd.testing.assert_frame_equal(
             bytes_to_data_frame(proto.datasets[0].data.data),
             EXPECTED_DATAFRAME,
