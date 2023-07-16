@@ -31,7 +31,7 @@ describe("st._arrow_scatter_chart", () => {
   it("displays all scatterplot-chart combinations correctly", () => {
     cy.get(".element-container [data-testid='stArrowVegaLiteChart']").should(
       "have.length",
-      19
+      5
     );
 
     cy.get(".element-container [data-testid='stArrowVegaLiteChart']").each(

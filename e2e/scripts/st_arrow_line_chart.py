@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 
 import streamlit as st
-from tests.streamlit import pyspark_mocks
+from tests.streamlit import pyspark_mocks, snowpark_mocks
 
 np.random.seed(0)
 
@@ -28,77 +28,35 @@ df2 = df.copy()
 df2["e"] = ["bird" if x % 2 else "airplane" for x in range(20)]
 
 """
-### Wide dataframe with x and y implicitly set
+### Old tests
 
-Should show 3 series.
+TODO: Remove these in another PR. They're now tested in unit tests.
 """
 st._arrow_line_chart(df)
-
-"""
-### Wide dataframe with explicit x and implicit y
-
-Should show 2 series.
-"""
 st._arrow_line_chart(df, x="a")
-
-"""
-### Wide dataframe with implicit x and explicit y
-
-Should show 1 series.
-"""
 st._arrow_line_chart(df, y="a")
-
-"""
-### Wide dataframe with implicit x and explicit y list
-
-Should show 2 series.
-"""
 st._arrow_line_chart(df, y=["a", "b"])
-
-"""
-### Wide dataframe with explicit x and explicit y
-
-Should show 1 series.
-"""
 st._arrow_line_chart(df, x="a", y="b")
-
-"""
-### Wide dataframe with explicit x and explicit y
-
-Should show 1 series.
-"""
 st._arrow_line_chart(df, x="b", y="a")
-
-"""
-### Wide dataframe with explicit x and explicit y list
-
-Should show 2 series.
-"""
 st._arrow_line_chart(df, x="a", y=["b", "c"])
-
-"""
-### PySpark dataframe
-
-Should show 6 series
-"""
 st._arrow_line_chart(pyspark_mocks.DataFrame())
 
 """
-### Wide dataframe with color sequence
+### Snowpark dataframe with too many rows
 
-Should show 2 series, in orange and green
+Should show a warning.
 """
-st._arrow_line_chart(df, x="a", y=["b", "c"], color=["#e60", "#4f2"])
-
-"""
-### Wide dataframe with color value
-
-Should show 1 series, in orange
-"""
-st._arrow_line_chart(df, x="a", y="b", color="#e60")
+st._arrow_line_chart(snowpark_mocks.DataFrame())
 
 """
-### Wide dataframe with nominal color column
+### Dataframe with no data.
+
+Chart should still have a normal size (though no axes, etc.)
+"""
+st._arrow_line_chart()
+
+"""
+### Long dataframe with nominal color column
 
 Should show 2 series, called 'airplane' and 'bird', with default colors
 """
