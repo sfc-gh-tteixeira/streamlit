@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { ReactElement, useRef, useState, useEffect } from "react"
+import React, { ReactElement, memo, useRef, useState, useEffect } from "react"
 import { useTheme } from "@emotion/react"
 import { Tabs as UITabs, Tab as UITab } from "baseui/tabs-motion"
 
@@ -87,9 +87,10 @@ function Tabs(props: TabProps): ReactElement {
       <UITabs
         activateOnFocus
         activeKey={activeTabKey}
-        onChange={({ activeKey }) => {
-          setActiveTabKey(activeKey)
-          setActiveTabName(allTabLabels[activeKey as number])
+        onChange={({ activeKey }: { activeKey: React.Key }) => {
+          const keyNum = parseInt(activeKey as string, 10)
+          setActiveTabKey(keyNum)
+          setActiveTabName(allTabLabels[keyNum])
         }}
         /* renderAll on UITabs should always be set to true to avoid scrolling issue
            https://github.com/streamlit/streamlit/issues/5069
@@ -235,4 +236,4 @@ function Tabs(props: TabProps): ReactElement {
   )
 }
 
-export default Tabs
+export default memo(Tabs)
