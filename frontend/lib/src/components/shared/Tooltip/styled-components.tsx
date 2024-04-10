@@ -33,14 +33,19 @@ export const StyledEllipsizedDiv = styled.div({
 export const StyledTooltipContentWrapper = styled.div(({ theme }) => ({
   boxSizing: "border-box",
   fontSize: `${theme.fontSizes.sm}`,
-  maxWidth: `calc(${theme.sizes.contentMaxWidth} - 4rem)`,
+  maxWidth: `calc(${theme.sizes.contentMaxWidthXl} - 4rem)`,
   maxHeight: "300px",
   overflow: ["auto", "overlay"],
   padding: `${theme.spacing.xs} ${theme.spacing.md}`,
 
+  [`@media (max-width: ${theme.breakpoints.xl})`]: {
+    maxWidth: `calc(${theme.sizes.contentMaxWidth} - 4rem)`,
+  },
+
   [`@media (max-width: ${theme.breakpoints.sm})`]: {
     maxWidth: `calc(100% - 2rem)`,
   },
+
   img: {
     maxWidth: "100%",
   },

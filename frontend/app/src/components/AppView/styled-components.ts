@@ -152,7 +152,11 @@ export const StyledAppViewBlockContainer =
         paddingTop: topEmbedPadding,
         paddingBottom: bottomEmbedPadding,
         minWidth: isWideMode ? "auto" : undefined,
-        maxWidth: isWideMode ? "initial" : theme.sizes.contentMaxWidth,
+        maxWidth: isWideMode ? "initial" : theme.sizes.contentMaxWidthXl,
+
+        [`@media (max-width: ${theme.breakpoints.xl})`]: {
+          maxWidth: isWideMode ? "initial" : theme.sizes.contentMaxWidth,
+        },
 
         ...fullScreenButtonStyles,
 
@@ -197,7 +201,11 @@ export const StyledBottomBlockContainer =
         paddingTop: theme.spacing.lg,
         paddingBottom: showPadding ? "55px" : theme.spacing.threeXL,
         minWidth: isWideMode ? "auto" : undefined,
-        maxWidth: isWideMode ? "initial" : theme.sizes.contentMaxWidth,
+        maxWidth: isWideMode ? "initial" : theme.sizes.contentMaxWidthXl,
+
+        [`@media (max-width: ${theme.breakpoints.xl})`]: {
+          maxWidth: isWideMode ? "initial" : theme.sizes.contentMaxWidth,
+        },
 
         [`@media print`]: {
           minWidth: "100%",

@@ -19,5 +19,8 @@ export const sizes = {
   headerHeight: "2.875rem",
   sidebarTopSpace: "6rem",
   sidebar: "21rem",
+  // Width of main content area.
   contentMaxWidth: "46rem",
+  // Width of main content area on XL+ screens. (See breakpoints.ts)
+  contentMaxWidthXl: "56rem",
 }
