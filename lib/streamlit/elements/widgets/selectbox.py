@@ -52,6 +52,10 @@ if TYPE_CHECKING:
     from streamlit.delta_generator import DeltaGenerator
 
 
+class _DEFAULT:
+    pass
+
+
 @dataclass
 class SelectboxSerde(Generic[T]):
     options: Sequence[T]
@@ -74,12 +78,13 @@ class SelectboxSerde(Generic[T]):
 
 
 class SelectboxMixin:
+    # Always return a T when the index is set to an integer.
     @overload
     def selectbox(
         self,
         label: str,
         options: OptionSequence[T],
-        index: int = 0,
+        index: int,
         format_func: Callable[[Any], Any] = str,
         key: Key | None = None,
         help: str | None = None,
@@ -87,17 +92,19 @@ class SelectboxMixin:
         args: WidgetArgs | None = None,
         kwargs: WidgetKwargs | None = None,
         *,  # keyword-only arguments:
+        value: type[_DEFAULT] = _DEFAULT,
         placeholder: str = "Choose an option",
         disabled: bool = False,
         label_visibility: LabelVisibility = "visible",
     ) -> T: ...
 
+    # When index is unset, return T | None.
     @overload
     def selectbox(
         self,
         label: str,
         options: OptionSequence[T],
-        index: None,
+        index: None = None,
         format_func: Callable[[Any], Any] = str,
         key: Key | None = None,
         help: str | None = None,
@@ -105,6 +112,7 @@ class SelectboxMixin:
         args: WidgetArgs | None = None,
         kwargs: WidgetKwargs | None = None,
         *,  # keyword-only arguments:
+        value: T | type[_DEFAULT] = _DEFAULT,
         placeholder: str = "Choose an option",
         disabled: bool = False,
         label_visibility: LabelVisibility = "visible",
@@ -115,7 +123,7 @@ class SelectboxMixin:
         self,
         label: str,
         options: OptionSequence[T],
-        index: int | None = 0,
+        index: int | None = None,
         format_func: Callable[[Any], Any] = str,
         key: Key | None = None,
         help: str | None = None,
@@ -123,6 +131,7 @@ class SelectboxMixin:
         args: WidgetArgs | None = None,
         kwargs: WidgetKwargs | None = None,
         *,  # keyword-only arguments:
+        value: T | type[_DEFAULT] = _DEFAULT,
         placeholder: str = "Choose an option",
         disabled: bool = False,
         label_visibility: LabelVisibility = "visible",
@@ -163,6 +172,13 @@ class SelectboxMixin:
             The index of the preselected option on first render. If ``None``,
             will initialize empty and return ``None`` until the user selects an option.
             Defaults to 0 (the first option).
+
+            To set the defeault element by value rather than by index, see ``value``
+            below.
+
+        value : any
+            The value that is preselected on first render. You may set ``value``
+            or ``index`` or neither, but not both.
 
         format_func : function
             Function to modify the display of the options. It receives
@@ -252,6 +268,7 @@ class SelectboxMixin:
             on_change=on_change,
             args=args,
             kwargs=kwargs,
+            value=value,
             placeholder=placeholder,
             disabled=disabled,
             label_visibility=label_visibility,
@@ -262,7 +279,7 @@ class SelectboxMixin:
         self,
         label: str,
         options: OptionSequence[T],
-        index: int | None = 0,
+        index: int | None = None,
         format_func: Callable[[Any], Any] = str,
         key: Key | None = None,
         help: str | None = None,
@@ -270,12 +287,22 @@ class SelectboxMixin:
         args: WidgetArgs | None = None,
         kwargs: WidgetKwargs | None = None,
         *,  # keyword-only arguments:
+        value: T | type[_DEFAULT] = _DEFAULT,
         placeholder: str = "Choose an option",
         disabled: bool = False,
         label_visibility: LabelVisibility = "visible",
         ctx: ScriptRunContext | None = None,
     ) -> T | None:
         key = to_key(key)
+
+        if value != _DEFAULT:
+            if index is None:
+                index = _get_index(value, options)
+            else:
+                raise StreamlitAPIException(f"""
+                    You may not set both an index ({index}) and a value ({value}) on a
+                    selectbox.
+                """)
 
         check_widget_policies(
             self.dg,
@@ -358,3 +385,10 @@ class SelectboxMixin:
     def dg(self) -> DeltaGenerator:
         """Get our DeltaGenerator."""
         return cast("DeltaGenerator", self)
+
+
+def _get_index(value: T, values: OptionSequence[T]) -> int:
+    try:
+        return values.index(value)
+    except ValueError:
+        return 0

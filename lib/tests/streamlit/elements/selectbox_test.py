@@ -213,6 +213,27 @@ class SelectboxTest(DeltaGeneratorTestCase):
         self.assertEqual(el.type, "CachedWidgetWarning")
         self.assertTrue(el.is_warning)
 
+    def test_value_set(self):
+        """Test that it can be called with a "value" set."""
+        st.selectbox("the label", ("a", "b", "c", "d"), value="c")
+
+        c = self.get_delta_from_queue().new_element.selectbox
+
+        self.assertEqual(c.default, 2)
+
+    def test_value_None(self):
+        """Test that it can be called with a "value" set to None."""
+        st.selectbox("the label", ("a", None, "b", "c", "d"), value=None)
+
+        c = self.get_delta_from_queue().new_element.selectbox
+
+        self.assertEqual(c.default, 1)
+
+    def test_both_value_and_index(self):
+        """Test that it raises an error with both value and index are set."""
+        with pytest.raises(StreamlitAPIException):
+            st.selectbox("the label", ("a", "b", "c", "d"), index=1, value="c")
+
 
 def test_selectbox_interaction():
     """Test interactions with an empty selectbox widget."""
