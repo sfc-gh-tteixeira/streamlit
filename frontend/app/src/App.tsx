@@ -28,6 +28,7 @@ import {
   AutoRerun,
   BackMsg,
   BaseUriParts,
+  CircularBuffer,
   ComponentRegistry,
   Config,
   createFormsData,
@@ -74,6 +75,8 @@ import {
   logError,
   logMessage,
   Logo,
+  mark,
+  measure,
   Navigation,
   NewSession,
   notNullOrUndefined,
@@ -122,6 +125,7 @@ import withScreencast, {
   ScreenCastHOC,
 } from "@streamlit/app/src/hocs/withScreencast/withScreencast"
 
+import { showDevelopmentOptions } from "./showDevelopmentOptions"
 // Used to import fonts + responsive reboot items
 import "@streamlit/app/src/assets/css/theme.scss"
 import { ThemeManager } from "./util/useThemeManager"
@@ -190,23 +194,17 @@ declare global {
   interface Window {
     streamlitDebug: any
     iFrameResizer: any
+    __streamlit_profiles__?: Record<
+      string,
+      CircularBuffer<{
+        phase: "mount" | "update" | "nested-update"
+        actualDuration: number
+        baseDuration: number
+        startTime: number
+        commitTime: number
+      }>
+    >
   }
-}
-
-export const showDevelopmentOptions = (
-  hostIsOwner: boolean | undefined,
-  toolbarMode: Config.ToolbarMode
-): boolean => {
-  if (toolbarMode == Config.ToolbarMode.DEVELOPER) {
-    return true
-  }
-  if (
-    Config.ToolbarMode.VIEWER == toolbarMode ||
-    Config.ToolbarMode.MINIMAL == toolbarMode
-  ) {
-    return false
-  }
-  return hostIsOwner || isLocalhost()
 }
 
 export class App extends PureComponent<Props, State> {
@@ -333,14 +331,6 @@ export class App extends PureComponent<Props, State> {
       themeChanged: this.handleThemeMessage,
       pageChanged: this.onPageChange,
       isOwnerChanged: isOwner => this.setState({ isOwner }),
-      jwtHeaderChanged: ({ jwtHeaderName, jwtHeaderValue }) => {
-        if (
-          this.endpoints.setJWTHeader !== undefined &&
-          this.state.appConfig.useExternalAuthToken
-        ) {
-          this.endpoints.setJWTHeader({ jwtHeaderName, jwtHeaderValue })
-        }
-      },
       fileUploadClientConfigChanged: config => {
         if (this.endpoints.setFileUploadClientConfig !== undefined) {
           this.endpoints.setFileUploadClientConfig(config)
@@ -461,6 +451,7 @@ export class App extends PureComponent<Props, State> {
     // "Can't call setState on a component that is not yet mounted." error.
     this.initializeConnectionManager()
 
+    mark(this.state.scriptRunState)
     this.hostCommunicationMgr.sendMessageToHost({
       type: "SCRIPT_RUN_STATE_CHANGED",
       scriptRunState: this.state.scriptRunState,
@@ -512,6 +503,16 @@ export class App extends PureComponent<Props, State> {
       window.prerenderReady = true
     }
     if (this.state.scriptRunState !== prevState.scriptRunState) {
+      mark(this.state.scriptRunState)
+
+      if (this.state.scriptRunState === ScriptRunState.NOT_RUNNING) {
+        measure(
+          "script-run-cycle",
+          ScriptRunState.RUNNING,
+          ScriptRunState.NOT_RUNNING
+        )
+      }
+
       this.hostCommunicationMgr.sendMessageToHost({
         type: "SCRIPT_RUN_STATE_CHANGED",
         scriptRunState: this.state.scriptRunState,
@@ -1979,7 +1980,6 @@ export class App extends PureComponent<Props, State> {
 
               <AppView
                 endpoints={this.endpoints}
-                sessionInfo={this.sessionInfo}
                 sendMessageToHost={this.hostCommunicationMgr.sendMessageToHost}
                 elements={elements}
                 scriptRunId={scriptRunId}
