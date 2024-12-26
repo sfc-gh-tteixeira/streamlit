@@ -221,6 +221,11 @@ class SelectboxTest(DeltaGeneratorTestCase):
 
         self.assertEqual(c.default, 2)
 
+    def test_invalid_value_set(self):
+        """Test that it can be called with an invalid "value"."""
+        with self.assertRaises(ValueError):
+            st.selectbox("the label", ("a", "b", "c", "d"), value="z")
+
     def test_value_None(self):
         """Test that it can be called with a "value" set to None."""
         st.selectbox("the label", ("a", None, "b", "c", "d"), value=None)
