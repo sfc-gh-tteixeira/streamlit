@@ -177,8 +177,9 @@ class SelectboxMixin:
             below.
 
         value : any
-            The value that is preselected on first render. You may set ``value``
-            or ``index`` or neither, but not both.
+            The value that is preselected on first render. If the given value is not
+            present in the `options` list, the 0th element will be selected. You may
+            set ``value`` or ``index`` or neither, but not both.
 
         format_func : function
             Function to modify the display of the options. It receives

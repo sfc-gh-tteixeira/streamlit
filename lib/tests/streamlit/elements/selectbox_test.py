@@ -257,7 +257,7 @@ def test_selectbox_interaction():
     selectbox = at.selectbox[0]
     assert selectbox.value == "m"
 
-    # # Clear the value
+    # Clear the value
     at = selectbox.set_value(None).run()
     selectbox = at.selectbox[0]
     assert selectbox.value is None
