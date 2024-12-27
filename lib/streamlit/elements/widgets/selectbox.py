@@ -298,7 +298,7 @@ class SelectboxMixin:
 
         if value != _DEFAULT:
             if index is None:
-                index = _get_index(value, options)
+                index = options.index(value)
             else:
                 raise StreamlitAPIException(f"""
                     You may not set both an index ({index}) and a value ({value}) on a
@@ -386,10 +386,3 @@ class SelectboxMixin:
     def dg(self) -> DeltaGenerator:
         """Get our DeltaGenerator."""
         return cast("DeltaGenerator", self)
-
-
-def _get_index(value: T, values: OptionSequence[T]) -> int:
-    try:
-        return values.index(value)
-    except ValueError:
-        return 0
