@@ -30,9 +30,9 @@ import { BlockPropsWithoutWidth } from "@streamlit/lib/src/components/core/Block
 import { isElementStale } from "@streamlit/lib/src/components/core/Block/utils"
 import { LibContext } from "@streamlit/lib/src/components/core/LibContext"
 import StreamlitMarkdown from "@streamlit/lib/src/components/shared/StreamlitMarkdown"
+import { STALE_STYLES } from "@streamlit/lib/src/theme"
 
 import { StyledTabContainer } from "./styled-components"
-import { STALE_STYLES } from "@streamlit/lib/src/theme"
 
 export interface TabProps extends BlockPropsWithoutWidth {
   widgetsDisabled: boolean
